@@ -38,13 +38,6 @@ class PeakSearchMenu:
         #self.param_work_path = None
         #self.hist_work_path = None
         #self.out_work_path = None
-        
-
-    #def reset_file_uploader (self,):
-    #    if 'upload_files' not in self.file_uploader:
-    #        self.file_uploader.upload_files = []
-    #    else:
-    #        self.file_uploader.upload_files = []
 
     def down_load_sample (self,):
         zip_bytes = zip_folder (self.pathSample)
@@ -169,7 +162,6 @@ class PeakSearchMenu:
         useErrDict = {
             1 : self.mess['th_sel_1'],
             0 : self.mess['th_sel_2']}
-        use_error_def = useErrDict [use_error_flg]
         
         with col1:
             c_fixed = st.text_input ('c : ', c_def)

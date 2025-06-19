@@ -58,7 +58,7 @@ def read_output_file (path = 'sample2_pks.histogramIgor',
 
     return df, peakdf
 
-def show_graph (df, peakDf, savePath = None, output = True,
+def show_graph (df, peakDf, savePath = 'graph.html',
                 lang = 'jpn'):
     mes = mess[lang]['graph']
     fig = go.Figure()
@@ -77,31 +77,13 @@ def show_graph (df, peakDf, savePath = None, output = True,
         x = peakDf[mes['pos']], y = peakDf[mes['peakH']],
         mode = 'markers', marker = dict (size = 10, symbol = 'triangle-up'),
         name = mes['peakPos']))
-    
-    #peak1 = peakDf.loc[peakDf['Flag']]
-    #fig.add_trace (go.Scatter (
-    #    x = peak1[mes['pos']], y = peak1[mes['peakH']],
-    #    mode = 'markers', marker = dict (size = 10, symbol = 'triangle-up'),
-    #    name = mes['peakPos']))
-    
-    #peak2 = peakDf.loc[~peakDf['Flag']]
-    #fig.add_trace (go.Scatter (
-    #    x = peak2[mes['pos']], y = peak2[mes['peakH']],
-    #    mode = 'markers', marker = dict (size = 10, symbol = 'triangle-up',fillcolor='rgba(0,0,0,0)'),
-    #    name = mes['peakPos']))
-
 
     fig.update_xaxes(title = "2θ") # X軸タイトルを指定
     fig.update_yaxes(title = "Intensity") # Y軸タイトルを指定
     fig.update_layout (showlegend = True)
-
-    if output: return (fig)
+    #fig.write_html (savePath)
+    return (fig)
     
-    if savePath is None:
-        fig.show()
-    else:
-        fig.write_html (savePath)
-
 def read_cntl_inp_xml (path):
     # XMLファイルを読み込む
     tree = ET.parse(path)  # ファイル名を適宜変更

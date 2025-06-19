@@ -11,11 +11,13 @@ from peaksearch_menu import PeakSearchMenu
 from indexing_menu import IndexingMenu
 
 if __name__ == '__main__':
+    st.write ('<<< Open side menu!! サイドメニューを開いてください。>>>>')
+    title = st.empty()
     sel_graph_space = st.empty ()
     
     with st.sidebar:
         #タイトルスペース確保
-        title = st.empty()
+        #title = st.empty()
         
         col1, col2 = st.columns (2)
         #言語選択
