@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ZCodeParameters>
+  <PeakSearchPSParameters>
+	
+	<ParametersForSmoothingDevision>
+		 
+		<NumberOfPointsForSGMethod>11</NumberOfPointsForSGMethod>
+		<EndOfRegion>MAX</EndOfRegion>
+	</ParametersForSmoothingDevision>
+
+	<PeakSearchRange>
+		
+		<Begin>MIN</Begin>
+		<End>MAX</End>
+	</PeakSearchRange>
+
+	<UseErrorData>1</UseErrorData>
+
+	<Threshold>1.5</Threshold>
+
+	<Alpha2Correction>1</Alpha2Correction>
+	<Waves>
+		
+		<Kalpha1WaveLength>0.5594075</Kalpha1WaveLength>
+		<Kalpha2WaveLength>0.563798</Kalpha2WaveLength>
+	</Waves>
+  </PeakSearchPSParameters>
+</ZCodeParameters>

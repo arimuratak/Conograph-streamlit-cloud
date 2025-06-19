@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ZCodeParameters>
+  <PeakSearchPSParameters>
+	<!--Parameters for peak search.-->
+	<ParametersForSmoothingDevision>
+		<!-- "ParametersForSmoothingDevision" can be set more than once 
+	    	in order to devide the smoothing range into several intervals.--> 
+		<NumberOfPointsForSGMethod>
+		<!--Number of points used for smoothing at a point (input an odd number >= 5).-->
+			15
+	 　　　</NumberOfPointsForSGMethod>
+		<EndOfRegion>
+		<!--The end point of the range to which the corresponding figure in "NumberOfPointsForSGMethod" is applied.
+			"MAX" is replaced with the end point of x-coordinates of the histogram. -->
+		 MAX
+		</EndOfRegion>
+	</ParametersForSmoothingDevision>
+
+	<PeakSearchRange>
+		<!--The range in which peak search is carried out.
+			"MIN" is replaced with the starting point of x-coordinates of the histogram.
+			"MAX" is replaced with the end point of x-coordinates of the histogram. -->
+		<Begin> MIN </Begin>
+		<End> MAX </End>
+	</PeakSearchRange>
+
+	<UseErrorData>
+	<!-- Use errors of y-values in histogram data to compute a threshold for peak-search?
+		 0 : No. (Use a constant given in "Threshold".)
+		 1 : Yes. (Use a constant times of the errors.) -->
+		1
+	</UseErrorData>
+
+	<Threshold>
+	<!--If "UseErrorData" is 0, this value is used as a threshold on peak-heights.
+		Otherwise, "Threshold" times Error[y-value] is used as the threshold at a point.-->
+		3.0
+    </Threshold>
+
+	<Alpha2Correction>
+	<!-- alpha2 reflections are contained?
+		 0 : No. (Deconvolution is not applied.)
+		 1 : Yes. (Deconvolution is applied.) -->
+		0
+	</Alpha2Correction>
+	<Waves>
+		<!-- Input wave-lengths of alpha1 and alpha2. -->
+		<Kalpha1WaveLength> 1.540600 </Kalpha1WaveLength>
+		<Kalpha2WaveLength> 1.544390 </Kalpha2WaveLength>
+	</Waves>
+  </PeakSearchPSParameters>
+</ZCodeParameters>

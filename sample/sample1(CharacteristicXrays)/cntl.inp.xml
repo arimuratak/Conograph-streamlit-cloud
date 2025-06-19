@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ZCodeParameters>
+  <PeakSearchInputFile>
+	<ControlParamFile>
+    	<!-- File of input parameters．-->
+	 	sample1.inp.xml
+	</ControlParamFile>
+
+	<HistogramDataFile> 
+		<FileName>
+        <!-- Histogram data file．-->
+        	sample1.dat
+		</FileName>
+	</HistogramDataFile>
+
+	<Outfile>
+    <!-- Name of output file. -->
+	 	output/sample1_pks.histogramIgor
+	</Outfile>
+  </PeakSearchInputFile>
+</ZCodeParameters>
