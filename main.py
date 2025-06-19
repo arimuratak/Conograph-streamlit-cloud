@@ -92,7 +92,7 @@ if __name__ == '__main__':
         if select_menu == mess[lang]['peaksearch']['main']:
             with graph_area:
                 if sel_graph == mes['diffPattern']:
-                    fig = show_graph (df, selected, output = True, lang = lang)
+                    fig = show_graph (df, selected, lang = lang)
                     st.plotly_chart (fig, use_container_width = True)
                 else:
                     objPeakSearch.display_log()

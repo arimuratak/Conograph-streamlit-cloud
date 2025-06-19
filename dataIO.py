@@ -58,8 +58,7 @@ def read_output_file (path = 'sample2_pks.histogramIgor',
 
     return df, peakdf
 
-def show_graph (df, peakDf, savePath = 'graph.html',
-                lang = 'jpn'):
+def show_graph (df, peakDf, lang = 'jpn'):
     mes = mess[lang]['graph']
     fig = go.Figure()
     fig.add_trace (
