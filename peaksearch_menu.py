@@ -43,8 +43,8 @@ class PeakSearchMenu:
         zip_bytes = zip_folder (self.pathSample)
         st.download_button (
             label = {
-                'eng':'Down load samples (zip format)', 
-                'jpn' : 'サンプル ダウンロード (zip形式)'}[self.lang],
+                'eng':'Download sample data (zip format)', 
+                'jpn' : 'サンプルデータ ダウンロード (zip形式)'}[self.lang],
             data = zip_bytes,
             file_name = 'sample.zip')
 

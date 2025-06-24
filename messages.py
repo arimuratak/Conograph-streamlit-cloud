@@ -52,7 +52,7 @@ messages = {
             'log' : 'Log'
         },
 
-    'indexing' : {'main' : 'Indexing'}
+    'indexing' : {'main' : 'Indexing (under development)'}
     },
 
     'jpn' : {
@@ -109,7 +109,7 @@ messages = {
         },
 
     'indexing' : {
-        'main' : '指数付け'
+        'main' : '指数付け（開発中）'
     }
     }
 }
