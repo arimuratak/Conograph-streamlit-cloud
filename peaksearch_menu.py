@@ -391,8 +391,6 @@ class PeakSearchMenu:
             self.downloadParamFile ()
 
         with exec_space:
-            assert os.path.exists (self.param_path)
-            assert os.path.exists (self.hist_path)
             if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
                 uploaded_map = self.load_files ()
                 #print (st.session_state['uploaded_map'])
