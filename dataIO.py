@@ -134,9 +134,16 @@ def read_inp_xml (path):
     kalpha1 = ps_params.find('.//Waves/Kalpha1WaveLength').text.strip()
     kalpha2 = ps_params.find('.//Waves/Kalpha2WaveLength').text.strip()
 
-    return (smoothing_params, [range_begin, range_end],
-            [float (threshold), int (use_error_data)],
-            int (alpha2_correction), [float (kalpha1), float (kalpha2)])
+    params = {
+        'nPoints' : smoothing_params['NumberOfPoints'][0],
+        'endRegion' : smoothing_params['EndOfRegion'][0],
+        'minRange' : range_begin, 'maxRange' : range_end,
+        'c_fixed' : float (threshold),
+        'useErr' :int (use_error_data),
+        'select' : int (alpha2_correction),
+        'kalpha1' : float (kalpha1), 'kalpha2' : float (kalpha2)}
+    
+    return params
 
 def change_inp_xml (params, path):
     # params : {num_points : , end_region : ,
@@ -192,42 +199,3 @@ if __name__ == '__main__':
         text = f.read()
 
     print (text)
-    
-    #path = './logs/result (sample3).txt'
-    #df, peakDf = read_output_file (path, lang = 'eng')    
-    #show_graph (df, peakDf, output = False, lang = 'eng')
-    """import os
-    folder = 'sample/sample1(CharacteristicXrays)'
-    path_cntl_inp = os.path.join (folder, 'cntl.inp.xml')
-    param_path, hist_path, out_path \
-            = read_cntl_inp_xml (path_cntl_inp)
-
-    param_path = os.path.join (folder, param_path)
-    hist_path = os.path.join (folder, hist_path)
-    out_path = os.path.join (folder, out_path)
-    params = read_inp_xml (param_path)
-    print (params)"""
-    #df, peakdf = read_output_file ()
-    #show_graph (df, peakdf, savePath='sample.html')
-    #path = '../sample/sample1(CharacteristicXrays)/cntl.inp.xml'
-    #path = '../sample/sample2(TOF)/cntl.inp.xml'
-    #path = '../sample/sample3(PF)/cntl.inp.xml'
-    #x,y,z = read_cntl_inp_xml (path)
-    #print (x,y,z)
-    #cntl = read_cntl_inp_xml ('../sample/sample1(CharacteristicXrays)/cntl.inp.xml')
-    #print (cntl)
-
-    #path = '../sample/sample1(CharacteristicXrays)/sample1.inp.xml'
-    #path = '../sample/sample3(PF)/sample3.inp.xml'
-    #params, minmax, error, corr, kalpha = read_inp_xml (path)
-    #print (params)
-    #print (minmax)
-    #print (error)
-    #print (corr, kalpha)
-
-    """params = {'num_points' : 11, 'end_region' : 'MAX',
-              'range_begin' : 'MIN', 'range_end' : 'MAX',
-               'use_error' : 1, 'threshold' : 3.0,
-               'alpha2corr' : 1,
-               'kalpha1' : 1.5406, 'kalpha2' : 1.54439}"""
-    #change_inp_xml (params, path)

@@ -10,48 +10,66 @@ from dataIO import read_inp_xml, change_inp_xml, zip_folder,\
                     read_output_file
 
 class PeakSearchMenu:
-    def __init__ (self, lang):
+    def __init__ (self, ):
         self.api_url = 'https://conograph-api-server.onrender.com'
         #self.api_url = "http://localhost:8000"
-        #self.workSpace = 'PeakSearch'
         
-        self.lang = lang
+        self.setup_session_state ()
+
         self.pathSample = 'sample'
-        #self.file_uploader = st.session_state
-        #self.folder = None
-        self.mess = mess[lang]['peaksearch']
+        self.mess = None #mess[lang]['peaksearch']
+        self.mess_gr = None #mess[lang]['graph']
         self.param_name = None
         self.hist_name = None
         self.param_path = 'param.imp.xml'
         self.hist_path = 'histogram.txt'
         self.out_path = 'output.txt'
         self.params = None
-        #self.objPeakSearch = None
-        #self.path_cntl_inp = None
-        #self.workSpace = None
         
-        #self.param_file = None
         self.hist_file = None
         self.log_path = 'LOG_PEAKSEARCH.txt'
         
-        #self.cntl_work_path = None
-        #self.param_work_path = None
-        #self.hist_work_path = None
-        #self.out_work_path = None
+    def setup_session_state (self,):
+        if 'lang' not in st.session_state:
+            st.session_state['lang'] = None
+        if 'mess_pk' not in st.session_state:
+            st.session_state['mess_pk'] = None
+        if 'mess_gr' not in st.session_state:
+            st.session_state['mess_gr'] = None
+        if 'param_name' not in st.session_state:
+            st.session_state['param_name'] = None
+        if 'hist_name' not in st.session_state:
+            st.session_state['hist_name'] = None
+        if 'default_params' not in st.session_state:
+            st.session_state['default_params'] = None
+        if 'params' not in st.session_state:
+            st.session_state['params'] = None
+        if 'uploaded_map' not in st.session_state:
+            st.session_state['uploaded_map'] = None
+        if 'df' not in st.session_state:
+            st.session_state['df'] = None
+        if 'peakDf' not in st.session_state:
+            st.session_state['peakDf'] = None
 
+
+    def set_language (self, lang):
+        st.session_state['lang'] = lang
+        st.session_state['mess_pk'] = mess[lang]['peaksearch']
+        st.session_state['mess_gr'] = mess[lang]['graph']
+        
     def down_load_sample (self,):
+        lang = st.session_state['lang']
         zip_bytes = zip_folder (self.pathSample)
         st.download_button (
             label = {
                 'eng':'Download sample data (zip format)', 
-                'jpn' : 'サンプルデータ ダウンロード (zip形式)'}[self.lang],
+                'jpn' : 'サンプルデータ ダウンロード (zip形式)'}[lang],
             data = zip_bytes,
             file_name = 'sample.zip')
 
     def display_log (self,):
         with open (self.log_path, 'r', encoding = 'utf-8') as f:
             text = f.read()
-        #print (text)
         st.text_area ('log', text, height = 400)
 
     #------------------------------------------------
@@ -59,46 +77,69 @@ class PeakSearchMenu:
     #   save as binary format
     #------------------------------------------------
     def upload_files (self,):
+        lang = st.session_state['lang']
         param_file = st.file_uploader(
                             {'eng' : 'Upload parameter file (xml)',
-                            'jpn': 'パラメータファイル (xml) アップロード'}[self.lang],
+                            'jpn': 'パラメータファイル (xml) アップロード'}[lang],
                             type = ["xml"], key = "param")
+        if st.session_state['param_name'] is not None:
+            name = st.session_state['param_name']
+            st.write (
+                {'eng' : 'File {} is saved.'.format (name),
+                 'jpn' : 'ファイル {} が保存されています。'.format(name)
+                 }[lang])
+            self.params = read_inp_xml (self.param_path)
+            st.session_state['params'] = self.params
         
         hist_file = st.file_uploader(
                             {'eng' : 'Upload histogram file',
-                            'jpn': 'ヒストグラムファイル アップロード'}[self.lang],
+                            'jpn': 'ヒストグラムファイル アップロード'}[lang],
                             type = ["dat", "histogramIgor", "histogramigor"], key = "hist")
+        if st.session_state['hist_name'] is not None:
+            name = st.session_state['hist_name']
+            st.write (
+                {'eng' : 'File {} is saved.'.format (name),
+                 'jpn' : 'ファイル {} が保存されています。'.format(name)
+                 }[lang]
+            )
 
         if param_file:
-            self.param_name = param_file.name
+            st.session_state['param_name'] = param_file.name
+            #self.param_name = param_file.name
             with open (self.param_path, 'wb') as f:
                 f.write (param_file.getbuffer ())
-
-            self.params = read_inp_xml (self.param_path)
+            params = read_inp_xml (self.param_path)
+            st.session_state ['params'] = params
+            st.session_state['default_params'] = params
 
         if hist_file:
-            self.hist_name = hist_file.name
+            st.session_state['hist_name'] = hist_file.name
+            #self.hist_name = hist_file.name
             with open (self.hist_path, 'wb') as f:
                 f.write (hist_file.getbuffer ())
 
     def load_files (self,):
+        param_name = st.session_state['param_name']
+        hist_name = st.session_state['hist_name']
         uploaded_map = {}
         with open (self.param_path, 'rb') as f:
-            uploaded_map[self.param_name] = f.read()
+            uploaded_map[param_name] = f.read()
         with open (self.hist_path, 'rb') as f:
-            uploaded_map[self.hist_name] = f.read ()
+            uploaded_map[hist_name] = f.read ()
+        #st.session_state['uploaded_map'] = uploaded_map
         return uploaded_map
 
-    def display_param (self, param_path):
+    def display_param (self, params):
+        lang = st.session_state['lang']
         if st.toggle (
             {'eng' : 'Show Default Parameter',
-            'jpn' : 'パラメータ初期値 表示'}[self.lang]):
-            text = self.readDefaultParam (param_path)
+            'jpn' : 'パラメータ初期値 表示'}[lang]):
+            text = self.params2text (params)
             st.write (text)
 
-    def exec_peaksearch (self,):
-        if st.button ({'eng' : 'Exec','jpn':'実行'}[self.lang]):
-            uploaded_map = self.load_files ()
+    def exec_peaksearch (self, uploaded_map):
+        lang = st.session_state['lang']
+        if st.button ({'eng' : 'Exec','jpn':'実行'}[lang]):
             files = {}
             for fname, fobj in uploaded_map.items():
                 files[fname] = (fname, fobj,
@@ -127,26 +168,48 @@ class PeakSearchMenu:
 
         return ans
 
-    def smthParams (self,):
-        st.write (self.mess['smth_mes'])
+    def edit_table_peak (self, peakDf):
+        lang = st.session_state['lang']
+        mess_gr = st.session_state['mess_gr']
+        dispDf = peakDf
+        dispDf.columns = [
+            {'eng' : 'Peak', 'jpn' : 'ピーク'}[lang],
+                mess_gr['pos'], mess_gr['peakH'],
+                mess_gr['fwhm'], mess_gr['sel']]
+
+        st.write (mess_gr['result'])
+        edited_df = st.data_editor (
+            dispDf,
+            column_config = {
+                mess_gr['sel']: st.column_config.CheckboxColumn(
+                            mess_gr['sel'], default = True)},
+            use_container_width = True)
+        selected = edited_df.loc[edited_df[mess_gr['sel']] == True]
+        selected.columns = peakDf.columns
+        return selected
+
+    def smthParams (self, params):
+        mess_pk = st.session_state['mess_pk']
+        st.write (mess_pk['smth_mes'])
         col1,col2 = st.columns (2)
-        nPointsDefault = self.params[0]['NumberOfPoints'][0]
-        endRegionDefault = self.params[0]['EndOfRegion'][0] 
+        nPointsDefault = params['nPoints']
+        endRegionDefault = params['endRegion'] 
         with col1:
             nPoints = st.text_input (
-                self.mess['tbl_col1'],
+                mess_pk['tbl_col1'],
                 nPointsDefault)
         with col2:
             endRegion = st.text_input (
-                self.mess['tbl_col2'],
+                mess_pk['tbl_col2'],
                 endRegionDefault)
             
-        return (nPoints, endRegion)
+        return nPoints, endRegion
     
-    def rangeParam (self,):
-        st.write (self.mess['area_mes'])
+    def rangeParam (self, params):
+        mess_pk = st.session_state['mess_pk']
+        st.write (mess_pk['area_mes'])
         col1,col2 = st.columns (2)
-        rangeMin, rangeMax = self.params[1]
+        rangeMin, rangeMax = params['minRange'], params['maxRange']
         if rangeMin == 'MIN': rangeMin = 0.0
         with col1:
             minRange = st.text_input ('min', rangeMin)
@@ -155,32 +218,36 @@ class PeakSearchMenu:
 
         return minRange, maxRange
     
-    def thresholdParam (self,):
-        st.write (self.mess['th_mes'])
+    def thresholdParam (self, params):
+        mess_pk = st.session_state['mess_pk']
+        lang = st.session_state['lang']
+        st.write (mess_pk['th_mes'])
         col1, col2 = st.columns ([2,8])
-        c_def, use_error_flg = self.params[2]
+        c_def = params['c_fixed']
         useErrDict = {
-            1 : self.mess['th_sel_1'],
-            0 : self.mess['th_sel_2']}
+            1 : mess_pk['th_sel_1'],
+            0 : mess_pk['th_sel_2']}
         
         with col1:
             c_fixed = st.text_input ('c : ', c_def)
         
         with col2:
             use_error = st.selectbox (
-                {'eng' : 'select','jpn' : '選択'}[self.lang],
+                {'eng' : 'select','jpn' : '選択'}[lang],
                 options = list (useErrDict.values()))
 
         return c_fixed, use_error
 
     def kalpha2Select (self,):
-        yes = self.mess['exec_sel_1']
-        no = self.mess['exec_sel_2']
-        select = st.radio (self.mess['delpk_mes'],
+        mess_pk = st.session_state['mess_pk']
+        yes = mess_pk['exec_sel_1']
+        no = mess_pk['exec_sel_2']
+        select = st.radio (mess_pk['delpk_mes'],
                            [yes, no], horizontal = True)
         return select
 
-    def kaplha2Param (self,):
+    def kaplha2Param (self, params):
+        mess_pk = st.session_state['mess_pk']
         mat = np.array ([
             [0.5594075, 0.563798],
             [0.709300, 0.713590],
@@ -188,7 +255,7 @@ class PeakSearchMenu:
             [1.788965, 1.792850],
             [1.936042, 1.939980],
             [2.289700, 2.293606]])
-        kalpha1, kalpha2 = self.params[-1]
+        kalpha1, kalpha2 = params['kalpha1'], params['kalpha2']
         kalphas = np.array ([[kalpha1, kalpha2]])
         dist = np.sqrt (np.power (mat - kalphas, 2).sum(axis = 1))
         idx = np.argmin (dist)
@@ -202,7 +269,7 @@ class PeakSearchMenu:
             'Cr / 2.289700 / 2.293606']
         
         sel = st.selectbox (
-            self.mess['wavelen_mes'],
+            mess_pk['wavelen_mes'],
             params, index = int (idx))
         
         kalpha1, kalpha2 = sel.split (' / ')[1:]
@@ -211,6 +278,8 @@ class PeakSearchMenu:
 
 
     def operationParam (self, params, savePath):
+        defParams = st.session_state['params']
+        mess_pk = st.session_state['mess_pk']
         #nPoins = params['nPoints']; endRegion = params['endRegion']
         minRange = params['minRange'] #; maxRange = params['maxRange']
         #c_fixed = params['c_fixed'];
@@ -218,51 +287,46 @@ class PeakSearchMenu:
         select = params['select']
         kalpha1 = params['kalpha1']; kalpha2 = params['kalpha2']
         if str (minRange) == '0.0': params['minRange'] = 'MIN'
-        params['useErr'] = int (useErr == self.mess['th_sel_1'])
-        params['select'] = int (select == self.mess['exec_sel_1'])
+        params['useErr'] = int (useErr == mess_pk['th_sel_1'])
+        params['select'] = int (select == mess_pk['exec_sel_1'])
         if (kalpha1 == None) | (kalpha2 == None):
-            params['kalpha1'], params['kalpha2'] = self.params[-1]
-
+            params['kalpha1'] = defParams['kalpha1']
+            params['kalpha2'] = defParams['kalpha2']
         change_inp_xml (params, savePath)
 
-    def readDefaultParam (self, params):
+    def params2text (self, params):
+        lang = st.session_state['lang']
+        mess_pk = st.session_state['mess_pk']
         text = ''
-        smoothing_params = params[0]
-        nPoints = smoothing_params['NumberOfPoints'][0]
-        endRegion = smoothing_params['EndOfRegion'][0]
-        range_begin, range_end = params[1]
-        threshold, useErr = params[2]
-        alpha2_correction = params[3]
-        kalpha1, kalpha2 = params[4]
+        nPoints = params['nPoints']
+        endRegion = params['endRegion']
+        range_begin, range_end = params['minRange'], params['maxRange']
+        threshold, useErr = params['c_fixed'], params['useErr']
+        alpha2_correction = params['select']
+        kalpha1, kalpha2 = params['kalpha1'], params['kalpha2']
 
-        text += {'eng':'Smoothing / ', 'jpn' : '平滑化 / '}[self.lang]
-        text += self.mess['tbl_col1'] + ' : {}, '.format (nPoints)
-        text += self.mess['tbl_col2'] + ' : {}  \n'.format (endRegion)
+        text += {'eng':'Smoothing / ', 'jpn' : '平滑化 / '}[lang]
+        text += mess_pk['tbl_col1'] + ' : {}, '.format (nPoints)
+        text += mess_pk['tbl_col2'] + ' : {}  \n'.format (endRegion)
 
-        text += self.mess['area_mes'] + ' / '
+        text += mess_pk['area_mes'] + ' / '
         text += 'min : {}, max : {}  \n'.format (range_begin, range_end)
-        text += {'eng':'threshold', 'jpn' : 'しきい値'}[self.lang] + ' / '
+        text += {'eng':'threshold', 'jpn' : 'しきい値'}[lang] + ' / '
         text += 'c : {}, '.format (threshold)
-        text += {0 : self.mess['th_sel_2'],
-                 1 : self.mess['th_sel_1']
+        text += {0 : mess_pk['th_sel_2'],
+                 1 : mess_pk['th_sel_1']
                  }[int (useErr)] + '  \n'
 
-        text += self.mess['delpk_mes'] + ' / '
-        text += {0 : self.mess['exec_sel_2'],
-                 1 : self.mess['exec_sel_1']
+        text += mess_pk['delpk_mes'] + ' / '
+        text += {0 : mess_pk['exec_sel_2'],
+                 1 : mess_pk['exec_sel_1']
                  }[int (alpha2_correction)] + '  \n'
         
         text += 'kα1 : {}, kα2 : {}'.format (kalpha1, kalpha2)
         return text
 
-    #def updateParamFile (self, ans):
-    #    saveParam = st.button (
-    #        {'eng' : 'Save parameters',
-    #         'jpn':'パラメータ保存'}[self.lang])
-    #    if saveParam:
-    #        change_inp_xml (ans, self.param_file)
-
     def downloadParamFile (self,):
+        lang = st.session_state['lang']
         with open (self.param_path, 'rb') as f:
             xml_file = f.read()
         
@@ -270,7 +334,7 @@ class PeakSearchMenu:
                 label = {
                     'eng' : 'Down load new parameters',
                     'jpn' : '新しいパラメータのダウンロード'
-                    }[self.lang],
+                    }[lang],
                 data = xml_file,
                 file_name = 'param.imp.xml'
             )
@@ -294,7 +358,8 @@ class PeakSearchMenu:
         if os.path.exists (self.hist_path): os.remove (self.hist_path)
 
     def menu (self,):
-        self.reset_files ()
+        mess_pk = st.session_state['mess_pk']
+        #self.reset_files ()
         ans = {k : None for k in [
             'defaultParam', 'df', 'peakDf', 'nPoints', 'endRegion',
             'minRange, maxRange, c_fixed', 'useErr','select',
@@ -303,18 +368,21 @@ class PeakSearchMenu:
         self.down_load_sample ()
         self.upload_files ()
 
-        if self.params is not None:
-            self.display_param (self.params)
+        if st.session_state['params'] is not None:
+            default_params = st.session_state['default_params']
+            params = st.session_state['params']
+            self.display_param (default_params)
 
-        if self.params is not None:
-            ans['nPoints'], ans['endRegion'] = self.smthParams ()
-            ans['minRange'], ans['maxRange'] = self.rangeParam ()
-            ans['c_fixed'],  ans['useErr'] = self.thresholdParam()
+            ans['nPoints'], ans['endRegion'] = \
+                            self.smthParams (params)
+            ans['minRange'], ans['maxRange'] = \
+                            self.rangeParam (params)
+            ans['c_fixed'],  ans['useErr'] = self.thresholdParam (params)
             select = self.kalpha2Select ()
             ans['select'] = select
         
-            if select == self.mess['exec_sel_1']:
-                ans['kalpha1'], ans['kalpha2'] = self.kaplha2Param ()
+            if select == mess_pk['exec_sel_1']:
+                ans['kalpha1'], ans['kalpha2'] = self.kaplha2Param (params)
 
             self.operationParam (ans, self.param_path)
 
@@ -323,8 +391,12 @@ class PeakSearchMenu:
             self.downloadParamFile ()
 
         with exec_space:
+            assert os.path.exists (self.param_path)
+            assert os.path.exists (self.hist_path)
             if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
-                res = self.exec_peaksearch ()
+                uploaded_map = self.load_files ()
+                #print (st.session_state['uploaded_map'])
+                res = self.exec_peaksearch (uploaded_map)
                 log = self.request_log ()
       
                 result = self.get_result (res)
