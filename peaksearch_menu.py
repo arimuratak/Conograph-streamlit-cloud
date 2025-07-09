@@ -7,55 +7,24 @@ import requests
 #import xml.etree.ElementTree as ET
 from messages import messages as mess
 from dataIO import read_inp_xml, change_inp_xml, zip_folder,\
-                    read_output_file
+                    read_output_file, read_inp_xml_conograph
 
 class PeakSearchMenu:
     def __init__ (self, ):
         self.api_url = 'https://conograph-api-server.onrender.com'
         #self.api_url = "http://localhost:8000"
         
-        self.setup_session_state ()
-
         self.pathSample = 'sample'
-        self.mess = None #mess[lang]['peaksearch']
-        self.mess_gr = None #mess[lang]['graph']
-        self.param_name = None
-        self.hist_name = None
-        self.param_path = 'param.imp.xml'
+        self.param_path = 'param.inp.xml'
         self.hist_path = 'histogram.txt'
         self.out_path = 'output.txt'
-        self.params = None
-        
-        self.hist_file = None
         self.log_path = 'LOG_PEAKSEARCH.txt'
-        
-    def setup_session_state (self,):
-        if 'lang' not in st.session_state:
-            st.session_state['lang'] = None
-        if 'mess_pk' not in st.session_state:
-            st.session_state['mess_pk'] = None
-        if 'mess_gr' not in st.session_state:
-            st.session_state['mess_gr'] = None
-        if 'param_name' not in st.session_state:
-            st.session_state['param_name'] = None
-        if 'hist_name' not in st.session_state:
-            st.session_state['hist_name'] = None
-        if 'default_params' not in st.session_state:
-            st.session_state['default_params'] = None
-        if 'params' not in st.session_state:
-            st.session_state['params'] = None
-        if 'uploaded_map' not in st.session_state:
-            st.session_state['uploaded_map'] = None
-        if 'df' not in st.session_state:
-            st.session_state['df'] = None
-        if 'peakDf' not in st.session_state:
-            st.session_state['peakDf'] = None
 
-
-    def set_language (self, lang):
-        st.session_state['lang'] = lang
-        st.session_state['mess_pk'] = mess[lang]['peaksearch']
-        st.session_state['mess_gr'] = mess[lang]['graph']
+    def set_language (self,):
+        if st.session_state is not None:
+            lang = st.session_state['lang']
+            st.session_state['mess_pk'] = mess[lang]['peaksearch']
+            st.session_state['mess_gr'] = mess[lang]['graph']
         
     def down_load_sample (self,):
         lang = st.session_state['lang']
@@ -88,8 +57,8 @@ class PeakSearchMenu:
                 {'eng' : 'File {} is saved.'.format (name),
                  'jpn' : 'ファイル {} が保存されています。'.format(name)
                  }[lang])
-            self.params = read_inp_xml (self.param_path)
-            st.session_state['params'] = self.params
+            params = read_inp_xml (self.param_path)
+            st.session_state['params'] = params
         
         hist_file = st.file_uploader(
                             {'eng' : 'Upload histogram file',
@@ -100,21 +69,22 @@ class PeakSearchMenu:
             st.write (
                 {'eng' : 'File {} is saved.'.format (name),
                  'jpn' : 'ファイル {} が保存されています。'.format(name)
-                 }[lang]
-            )
+                 }[lang])
 
         if param_file:
             st.session_state['param_name'] = param_file.name
-            #self.param_name = param_file.name
             with open (self.param_path, 'wb') as f:
                 f.write (param_file.getbuffer ())
             params = read_inp_xml (self.param_path)
             st.session_state ['params'] = params
             st.session_state['default_params'] = params
+            
+            #params_idx = read_inp_xml_conograph (self.param_path)
+            #st.session_state['params_idx_defau'] = params_idx
+            #st.session_state['params_idx'] = params_idx
 
         if hist_file:
             st.session_state['hist_name'] = hist_file.name
-            #self.hist_name = hist_file.name
             with open (self.hist_path, 'wb') as f:
                 f.write (hist_file.getbuffer ())
 

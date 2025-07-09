@@ -1,15 +1,23 @@
 import streamlit as st
+from init import setup_session_state
 from messages import messages as mess
 from dataIO import show_graph
 from peaksearch_menu import PeakSearchMenu
-from indexing_menu import IndexingMenu
+#from indexing_menu import IndexingMenu
 
 if __name__ == '__main__':
+    setup_session_state()
     objPeakSearch = PeakSearchMenu ()
-    objIndexing = IndexingMenu ()
+    #objIndexing = IndexingMenu ()
     
     st.write ('<<< Open side menu!! サイドメニューを開いてください。>>>>')
+    st.write ('**Remarks**')
+    st.write ('Reference of Peakserch process : https://github.com/rtomiyasu/PeakSearch')
+    st.write ('Reference of Indexing : https://github.com/rtomiyasu/ProjectPowderConograph')
+    st.write ('Menu for indexing is under development....')
+
     title = st.empty()
+
     sel_graph_space = st.empty ()
     
     with st.sidebar:        
@@ -20,8 +28,9 @@ if __name__ == '__main__':
                              horizontal = True)
             if lang_sel == 'English': lang = 'eng'
             else: lang = 'jpn'
-
-            objPeakSearch.set_language (lang)
+            st.session_state['lang'] = lang
+            objPeakSearch.set_language ()
+            #objIndexing.set_language ()
 
         with col2:
             select_menu = st.radio ('menu',
@@ -37,7 +46,8 @@ if __name__ == '__main__':
             out_pk_menu = objPeakSearch.menu()
 
         else:
-            objIndexing.menu()
+            st.write ('Under develoment...')
+            #objIndexing.menu(True)
 
     #----------------------------------------------------
     #   グラフ表示、ピークサーチ結果表示

@@ -1,5 +1,6 @@
 import io
 import os
+import re
 import zipfile
 import pandas as pd
 import xml.etree.ElementTree as ET
@@ -145,6 +146,36 @@ def read_inp_xml (path):
     
     return params
 
+def elem_to_dict(elem):
+    children = list(elem)
+    if not children:
+        return (elem.text or '').strip()
+    result = {}
+    for child in children:
+        key = child.tag
+        value = elem_to_dict(child)
+        if key in result:
+            # 同じタグ名の要素が複数ある場合、リストにまとめる
+            if not isinstance(result[key], list):
+                result[key] = [result[key]]
+            result[key].append(value)
+        else:
+            result[key] = value
+    return result
+
+def read_inp_xml_conograph (path, root_name = './/ConographParameters'):
+    tree = ET.parse(path)  # ファイル名を適宜変更
+    root = tree.getroot()
+    elem = root.find (root_name)
+
+    ans = elem_to_dict (elem)
+
+    return (ans)
+
+
+
+
+
 def change_inp_xml (params, path):
     # params : {num_points : , end_region : ,
     #           range_begin : , range_end : ,
@@ -193,9 +224,14 @@ def zip_folder(folder_path):
     return zip_buffer
 
 if __name__ == '__main__':
-    path = 'LOG_PEAKSEARCH.txt'
-    print (os.path.exists (path))
-    with open (path, 'r', encoding = 'utf-8') as f:
-        text = f.read()
+    #path = 'LOG_PEAKSEARCH.txt'
+    #print (os.path.exists (path))
+    #with open (path, 'r', encoding = 'utf-8') as f:
+    #    text = f.read()
+    #print (text)
 
-    print (text)
+    path = 'docs/allumina.inp.xml'
+    params = read_inp_xml_conograph (path)
+    print (params)
+
+    
