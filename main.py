@@ -11,11 +11,10 @@ if __name__ == '__main__':
     #objIndexing = IndexingMenu ()
     
     st.write ('<<< Open side menu!! サイドメニューを開いてください。>>>>')
-    st.write ('**Remarks**')
-    st.write ('Reference of Peakserch process : https://github.com/rtomiyasu/PeakSearch')
-    st.write ('Reference of Indexing : https://github.com/rtomiyasu/ProjectPowderConograph')
-    st.write ('Menu for indexing is under development....')
-
+    st.write ('<<<<Remarks>>>>')
+    st.write ('Please note that this web page is provided as a test version and is different from the official CONOGRAPH application available at https://z-code-software.com/.')
+    st.write ('このwebページはテスト運用として公開されているページであり、https://z-code-software.com/ にあるCONOGRAPH本体と異なります。')
+    
     title = st.empty()
 
     sel_graph_space = st.empty ()
@@ -47,7 +46,7 @@ if __name__ == '__main__':
 
         else:
             st.write ('Under develoment...')
-            #objIndexing.menu(True)
+            #objIndexing.menu()
 
     #----------------------------------------------------
     #   グラフ表示、ピークサーチ結果表示
