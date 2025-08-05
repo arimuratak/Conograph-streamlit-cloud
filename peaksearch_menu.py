@@ -17,7 +17,7 @@ class PeakSearchMenu:
         self.pathSample = 'sample'
         self.param_path = 'param.inp.xml'
         self.hist_path = 'histogram.txt'
-        self.out_path = 'output.txt'
+        self.out_path = 'peakdata.txt'
         self.log_path = 'LOG_PEAKSEARCH.txt'
 
     def set_language (self,):
@@ -26,71 +26,15 @@ class PeakSearchMenu:
             st.session_state['mess_pk'] = mess[lang]['peaksearch']
             st.session_state['mess_gr'] = mess[lang]['graph']
         
-    def down_load_sample (self,):
-        lang = st.session_state['lang']
-        zip_bytes = zip_folder (self.pathSample)
-        st.download_button (
-            label = {
-                'eng':'Download sample data (zip format)', 
-                'jpn' : 'サンプルデータ ダウンロード (zip形式)'}[lang],
-            data = zip_bytes,
-            file_name = 'sample.zip')
-
     def display_log (self,):
         with open (self.log_path, 'r', encoding = 'utf-8') as f:
             text = f.read()
         st.text_area ('log', text, height = 400)
 
-    #------------------------------------------------
-    #   upload parameter & histogram file &
-    #   save as binary format
-    #------------------------------------------------
-    def upload_files (self,):
-        lang = st.session_state['lang']
-        param_file = st.file_uploader(
-                            {'eng' : 'Upload parameter file (xml)',
-                            'jpn': 'パラメータファイル (xml) アップロード'}[lang],
-                            type = ["xml"], key = "param")
-        if st.session_state['param_name'] is not None:
-            name = st.session_state['param_name']
-            st.write (
-                {'eng' : 'File {} is saved.'.format (name),
-                 'jpn' : 'ファイル {} が保存されています。'.format(name)
-                 }[lang])
-            params = read_inp_xml (self.param_path)
-            st.session_state['params'] = params
-        
-        hist_file = st.file_uploader(
-                            {'eng' : 'Upload histogram file',
-                            'jpn': 'ヒストグラムファイル アップロード'}[lang],
-                            type = ["dat", "histogramIgor", "histogramigor"], key = "hist")
-        if st.session_state['hist_name'] is not None:
-            name = st.session_state['hist_name']
-            st.write (
-                {'eng' : 'File {} is saved.'.format (name),
-                 'jpn' : 'ファイル {} が保存されています。'.format(name)
-                 }[lang])
-
-        if param_file:
-            st.session_state['param_name'] = param_file.name
-            with open (self.param_path, 'wb') as f:
-                f.write (param_file.getbuffer ())
-            params = read_inp_xml (self.param_path)
-            st.session_state ['params'] = params
-            st.session_state['default_params'] = params
-            
-            #params_idx = read_inp_xml_conograph (self.param_path)
-            #st.session_state['params_idx_defau'] = params_idx
-            #st.session_state['params_idx'] = params_idx
-
-        if hist_file:
-            st.session_state['hist_name'] = hist_file.name
-            with open (self.hist_path, 'wb') as f:
-                f.write (hist_file.getbuffer ())
-
     def load_files (self,):
         param_name = st.session_state['param_name']
         hist_name = st.session_state['hist_name']
+
         uploaded_map = {}
         with open (self.param_path, 'rb') as f:
             uploaded_map[param_name] = f.read()
@@ -147,16 +91,63 @@ class PeakSearchMenu:
                 mess_gr['pos'], mess_gr['peakH'],
                 mess_gr['fwhm'], mess_gr['sel']]
 
-        st.write (mess_gr['result'])
+        #st.write (mess_gr['pks_result'])
         edited_df = st.data_editor (
             dispDf,
             column_config = {
                 mess_gr['sel']: st.column_config.CheckboxColumn(
                             mess_gr['sel'], default = True)},
             use_container_width = True)
-        selected = edited_df.loc[edited_df[mess_gr['sel']] == True]
-        selected.columns = peakDf.columns
-        return selected
+        #selected = edited_df.loc[edited_df[mess_gr['sel']] == True]
+        #selected.columns = peakDf.columns
+        edited_df = edited_df.rename (columns = {mess_gr['sel'] : 'Flag'})
+        #selected = selected.rename (columns = {'Use for indexing' : 'Flag'})
+        #return selected
+        return edited_df
+
+    def feedbackSelectedPeakToFile (self, selected):
+        selected['Flag'] = selected['Flag'].apply (lambda x: str (int (x)))
+        with open (self.out_path, 'r', encoding = 'utf-8') as f:
+            lines = f.readlines ()
+
+        st = None; ed = None; flg = False
+        #txt_st = None; txt_ed = None
+        for i, line in enumerate (lines):
+            if 'WAVES/O peak, peakpos, height, FWHM, Flag' in line:
+                flg = True
+            elif flg & ('BEGIN' in line):
+                st = i + 1
+                #txt_st = lines[st]
+
+            if st is not None:
+                for j in range (i + 1, len (lines)):
+                    if 'END' in lines[j]: break
+                    ed = j
+                    #txt_ed = lines[ed]
+            
+                break
+
+        lines_1, lines_2 = lines[:st], lines[ed + 1:]
+        #print (lines_1[-1]) # BEGIN
+        #print (lines_2[0]) # END
+
+        new_lines = []
+        cols = selected.columns
+        for _, row in selected.iterrows():
+            vs = [row[col] for col in cols]
+            vs = [str (int (vs[0])), f"{vs[1]:.6e}",
+                  f"{vs[2]:.6e}", f"{vs[3]:.6e}", vs[4]]
+            vs = '{:>5}{:>15}{:>15}{:>15}{:>5}'.format (*vs) 
+            new_lines.append (vs + '\n')
+        ans = lines_1 + new_lines + lines_2
+
+        ans = ''.join (ans)
+        with open (self.out_path, 'w', encoding = 'utf-8') as f:
+            f.write (ans)
+
+        #return ans
+                    
+
 
     def smthParams (self, params):
         mess_pk = st.session_state['mess_pk']
@@ -319,6 +310,8 @@ class PeakSearchMenu:
                 with open (self.out_path, 'wb') as f:
                     f.write (res.content)
                 ans = read_output_file (self.out_path)
+                hist_name = st.session_state['hist_name']
+                st.session_state['peak_name'] = hist_name + '_pk'
             elif res.status_code == 500:
                 ans = 'Error 500'
         return ans
@@ -329,14 +322,11 @@ class PeakSearchMenu:
 
     def menu (self,):
         mess_pk = st.session_state['mess_pk']
-        #self.reset_files ()
+    
         ans = {k : None for k in [
             'defaultParam', 'df', 'peakDf', 'nPoints', 'endRegion',
             'minRange, maxRange, c_fixed', 'useErr','select',
             'kalpha1', 'kalpha2', 'folder', 'log']}
-
-        self.down_load_sample ()
-        self.upload_files ()
 
         if st.session_state['params'] is not None:
             default_params = st.session_state['default_params']
@@ -357,8 +347,6 @@ class PeakSearchMenu:
             self.operationParam (ans, self.param_path)
 
         exec_space = st.empty ()
-        if os.path.exists (self.param_path):
-            self.downloadParamFile ()
 
         with exec_space:
             if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
@@ -376,6 +364,17 @@ class PeakSearchMenu:
                     ans['df'] = df; ans['peakDf'] = peakDf
                     st.session_state['df'] = df
                     st.session_state['peakDf'] = peakDf
+                    peakDf.to_csv ('peakDf.csv')
             
     
         return ans
+
+if __name__ == '__main__':
+    from init import setup_session_state
+    setup_session_state ()
+    st.session_state['lang'] = 'eng'
+    obj = PeakSearchMenu()
+    obj.set_language ()
+
+    result = obj.feedbackSelectedPeakToFile(None)
+    print (result)

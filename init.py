@@ -21,6 +21,10 @@ def setup_session_state ():
         st.session_state['df'] = None
     if 'peakDf' not in st.session_state:
         st.session_state['peakDf'] = None
+    if 'peakDf_selected' not in st.session_state:
+        st.session_state['peakDf_selected'] = None
+    if 'sel_graph' not in st.session_state:
+        st.session_state['sel_graph'] = None
 
     if 'mess_idx' not in st.session_state:
         st.session_state['mess_idx'] = None
@@ -28,5 +32,35 @@ def setup_session_state ():
         st.session_state['params_cono'] = None
     if 'params_idx_defau' not in st.session_state:
         st.session_state['params_idx_defau'] = None
+    if 'params_idx' not in st.session_state:
+        st.session_state['params_idx'] = None
     if 'bravais' not in st.session_state:
         st.session_state['bravais'] = None
+    if 'peak_name' not in st.session_state:
+        st.session_state['peak_name'] = None
+    if 'result' not in st.session_state:
+        st.session_state['result'] = None
+    if 'peakDf_indexing' not in st.session_state:
+        st.session_state['peakDf_indexing'] = None
+    if 'selected_candidates' not in st.session_state:
+        st.session_state['selected_candidates'] = None
+    if 'list_candidates' not in st.session_state:
+        st.session_state['list_candidates'] = None
+    if 'names_candidate' not in st.session_state:
+        st.session_state['names_candidate'] = None
+    #if 'peakDf_index_display_camdidate_number' not in st.session_state:
+    #    st.session_state['peakDf_index_display_number'] = None
+    """
+    if 'df_bestM' not in st.session_state:
+        st.session_state['df_bestM'] = None
+    if 'txt_bestM' not in st.session_state:
+        st.session_state['txt_bestM'] = None
+    if 'dict_bestM' not in st.session_state:
+        st.session_state['dict_bestM'] = None
+    if 'latConst' not in st.session_state:
+        st.session_state['latConst'] = None
+    if 'lattice_selected' not in st.session_state:
+        st.session_state['lattice_selected'] = None
+    if 'lattice_candidates' not in st.session_state:
+        st.session_state['lattice_candidates'] = None"""
+    

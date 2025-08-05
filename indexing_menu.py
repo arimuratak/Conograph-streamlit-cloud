@@ -1,10 +1,45 @@
+import os
 import streamlit as st
+import requests
 from messages import messages as mess
+from dataIO import read_for_bestM, text2lattice, read_peak_indexing,\
+                        change_inp_xml_indexing, read_lattices_from_xml
 
 class IndexingMenu:
-    def __init__(self, debug = False):
+    def __init__(self,):
+        #self.api_url = 'http://localhost:8100'
+        self.api_url = 'https://conograph-api-indexing.onrender.com'
+
         self.mess = mess['eng']
         self.param_path = 'param.inp.xml'
+        self.peak_path = 'peakdata.txt'
+        self.log_path = 'LOG_CONOGRAPH.txt'
+        self.result_path = 'result.xml'
+        self.selected_igor_path = 'selected.histogramIgor'
+        self.output_zip_path = 'output.zip'
+        self.lattice_eng2jpn = {
+            'Cubic(F)' : '立方晶(F)',
+            'Cubic(I)' : '立方晶(I)',
+            'Cubic(P)' : '立方晶(P)',
+            'Hexagonal' : '六方晶',
+            'Rhombohedral' : '三方晶',
+            'Tetragonal(I)' : '正方晶(I)',
+            'Tetragonal(P)' : '正方晶(P)',
+            'Orthorhombic(F)' : '斜方晶(F)',
+            'Orthorhombic(I)' : '斜方晶(I)',
+            'Orthorhombic(C)' : '斜方晶(C)',
+            'Orthorhombic(P)' : '斜方晶(P)',
+            'Monoclinic(P)' : '単斜晶(P)',
+            'Monoclinic(A)' : '単斜晶(A)',
+            'Monoclinic(B)' : '単斜晶(B)',
+            'Monoclinic(C)' : '単斜晶(C)',
+            'Triclinic' : '三斜晶'}
+        
+        self.lattice_jpn2eng = {
+            v : k for k,v in self.lattice_eng2jpn.items()}
+        
+        self.cvtTbl = {'eng' : self.lattice_jpn2eng,
+                       'jpn' : self.lattice_eng2jpn}
         
         self.outputLatticeDict = {
             'tric'    : 'OutputTriclinic',
@@ -42,16 +77,119 @@ class IndexingMenu:
         ans = '\n'.join (text)
         return ans
 
+    def load_files (self,):
+        param_name = st.session_state['param_name']
+        peak_name = st.session_state['peak_name']
+
+        uploaded_map = {}
+        with open (self.param_path, 'rb') as f:
+            uploaded_map[param_name] = f.read()
+        with open (self.peak_path, 'rb') as f:
+            uploaded_map[peak_name] = f.read ()
+        #st.session_state['uploaded_map'] = uploaded_map
+        return uploaded_map
+
     def display_param (self,):
         lang = st.session_state['lang']
         params = st.session_state['params_idx_defau']
+        #print (params)
         if st.toggle (
             {'eng' : 'Show Default Parameter',
             'jpn' : 'パラメータ初期値 表示'}[lang]):
             text = self.params2text (params)
             st.write (text)
+    
+    def exec_indexing (self, uploaded_map):
+        lang = st.session_state['lang']
+        if st.button ({'eng' : 'Exec','jpn':'実行'}[lang]):
+            
+            res = self.exec_cmd (uploaded_map, 'quit\n')
 
-    def search_level (self,):
+            return res
+        
+        return None
+    
+    def exec_cmd (self, uploaded_map, cmd = None):
+        if cmd is None: cmd = 'quit\n'
+        elif 'quit' not in cmd[-5:]: cmd += 'quit\n'
+        data = {'cmd' : cmd}
+
+        files = {}
+        for fname, fobj in uploaded_map.items():
+                files[fname] = (fname, fobj,
+                                'application/octet-stream')
+
+        res = requests.post (
+                self.api_url + '/run_cpp', files = files, data = data)
+
+        return res
+
+    def take_indexing_peak_data (self, uploaded_map, numCandidate):
+        cmd = numCandidate + '\nquit\n'
+        
+        res = self.exec_cmd (uploaded_map, cmd)
+        fname = self.request_file ('/get_histogramIgor', self.selected_igor_path)
+        #_, selected_lat_peak = read_output_file (self.selected_igor_path)
+        selected_lat_peak = read_peak_indexing (self.selected_igor_path)
+        st.session_state['peakDf_indexing'] = selected_lat_peak
+        return fname
+
+    def take_indexing_peak_data_selected (self, uploaded_map):
+        lang = st.session_state['lang']
+        result = st.session_state['result'][lang]
+        numCandidate = result['lattice_selected']['number']
+        st.session_state['list_candidates'] = [numCandidate]
+        fname = self.take_indexing_peak_data (uploaded_map, numCandidate)
+        return fname, numCandidate
+
+    def get_fname (self, res):
+        fname = res.headers.get ('file_name')
+        fname = fname.split('/')[-1]
+        return fname
+
+    def request_file (self, add_url = '/log_file', savePath = 'LOG_CONOGRAPH.txt'):
+        res = requests.post (
+            self.api_url + add_url)
+        
+        if res is None: ans = None
+        else:
+            if res.status_code == 200:
+                fname = self.get_fname (res)
+                print (fname)
+                if os.path.exists (savePath):
+                    os.remove (savePath)
+                content = res.content.decode ('utf-8')
+                with open (savePath, 'w', encoding = 'utf-8') as f:
+                    f.write (content)
+                #with open (fname, 'w', encoding = 'utf-8') as f:
+                #    f.write (content)
+                ans = fname
+            else:
+                ans = 'Error 500'
+
+        return ans
+
+
+    def request_log (self,):
+        res = requests.post (
+            self.api_url + '/log_file')
+        
+        if res is None: ans = None
+        else:
+            if res.status_code == 200:
+                if os.path.exists (self.log_path):
+                    os.remove (self.log_path)
+                content = res.content.decode ('utf-8')
+                with open (self.log_path, 'w', encoding = 'utf-8') as f:
+                    f.write (content)
+                ans = self.log_path
+            else:
+                ans = 'Error 500'
+
+        return ans
+
+
+    def search_level (self, params_dict):
         mes, params = self.read_session ()
 
         selDefault = int (params['SearchLevel'])
@@ -64,15 +202,24 @@ class IndexingMenu:
                            index = selDefault)
         nPeak = st.text_input (mes['nPeak'], nPeakDefault)
 
-        return select, nPeak
+        select = {sel1 : '0', sel2 : '1'}[select]
+        params_dict['SearchLevel'] = select
+        params_dict['MaxNumberOfPeaks'] = nPeak
+
+        return params_dict
         
-    def search_method (self,):
+    def search_method (self, params_dict):
         mes, params = self.read_session ()
         selDef = int (params['IsAngleDispersion'])
         sel1 = mes['tof']; sel2 = mes['angleDisp']
         sel = st.radio (mes['select'],
                         [sel1, sel2], index = selDef,
                         horizontal = True)
+        
+        params_dict['IsAngleDispersion'] = {
+            sel1 : '0', sel2 : '1'}[sel]
+        
+        ps_dafau = st.session_state['params_idx_defau']
         
         if sel == sel1:
             st.write (
@@ -82,13 +229,17 @@ class IndexingMenu:
 
             if len (convParams) > 0: 
                 ps = convParams.strip().split (' ')
-            else: ps['','','']
+            else: ps = [' ',' ',' ']
             
             with col1: p1 = st.text_input ('', ps[0])
             with col2: p2 = st.text_input ('', ps[1])
             with col3: p3 = st.text_input ('', ps[2])
 
-            ans = [p1, p2, p3]
+            ans = ' '.join ([p1, p2, p3])
+
+            params_dict['ConversionParameters'] = ans
+            params_dict['WaveLength'] = ps_dafau['WaveLength']
+            params_dict['ZeroPointShiftParameter'] = ps_dafau['ZeroPointShiftParameter']
             
         else:
             col1, col2 = st.columns (2)
@@ -98,24 +249,26 @@ class IndexingMenu:
                                 params['WaveLength'])
             with col2:
                 zeroPoint = st.text_input (
-                                mes['zeroPoint'],
-                                params['ZeroPointShiftParameter'])
+                        mes['zeroPoint'],
+                        params['ZeroPointShiftParameter'])
             
-            ans = [waveLen, zeroPoint]
+            params_dict['WaveLength'] = waveLen
+            params_dict['ZeroPointShiftParameter'] = zeroPoint
+            params_dict['ConversionParameters'] = ' '
 
-        sel = {sel1 : '0', sel2 : '1'}[sel]
-
-        return sel, ans
+        return params_dict
             
-    def nPeakForM (self,):
+    def nPeakForM (self, params_dict):
         mes, params = self.read_session ()
         nPeak = params['MaxNumberOfPeaksForFOM']
         
         ans = st.text_input (mes['nPeakForM'], nPeak)
 
-        return ans
+        params_dict['MaxNumberOfPeaksForFOM'] = ans
 
-    def min_max_miller_idx (self,):
+        return params_dict
+
+    def min_max_miller_idx (self, params_dict):
         mes, params = self.read_session ()
         message = mes['minMaxPeak']
         minN = params['MinNumberOfMillerIndicesInRange']
@@ -127,17 +280,21 @@ class IndexingMenu:
         with col2:
             maxIdx = st.text_input ('max :', maxN, key = 'max')
 
-        return minIdx, maxIdx
+        params_dict['MinNumberOfMillerIndicesInRange'] = minIdx
+        params_dict['MaxNumberOfMillerIndicesInRange'] = maxIdx
 
-    def minFOM (self,):
+        return params_dict
+
+    def minFOM (self, params_dict):
         mes, params = self.read_session ()        
         message = mes['minFOM']
         param = params['MinFOM']
         ans = st.text_input (message, param)
 
-        return ans
+        params_dict['MinFOM'] = ans
+        return params_dict
 
-    def rangeLattice (self,):
+    def rangeLattice (self, params_dict):
         mes, params = self.read_session ()
         message = mes['rangeLattice']
         minRange = params['MinUnitCellEdgeABC']
@@ -148,16 +305,21 @@ class IndexingMenu:
             minV = st.text_input ('min', minRange, key = 'minRange')
         with col2:
             maxV = st.text_input ('max', maxRange, key = 'maxRange')
-        return minV, maxV
+        
+        params_dict['MinUnitCellEdgeABC'] = minV
+        params_dict['MaxUnitCellEdgeABC'] = maxV
+        return params_dict
 
-    def resolution_err (self,):
+    def resolution_err (self, params_dict):
         mes, params = self.read_session ()
         message = mes['resolution']
         param = params['Resolution']
         ans = st.text_input (message, param)
-        return ans
+        params_dict['Resolution'] = ans
 
-    def select_lattice_pattern (self,):
+        return params_dict
+
+    def select_lattice_pattern (self, params_dict):
         lang = st.session_state['lang']
         st.write ({
             'eng' : 'Output lattice pattern selection',
@@ -170,7 +332,6 @@ class IndexingMenu:
                     'tetra_P', 'tetra_I', 'rhombo', 'hexago',
                     'cubic_P', 'cubic_I', 'cubic_F']
         
-        ans = {}
         cols = st.columns (2)
         for i, pattern in enumerate (lattices):
             label = mes[pattern]
@@ -179,11 +340,11 @@ class IndexingMenu:
             with cols[i // 7]:
                 state = st.checkbox (label = label,
                             key = 'chk_{}'.format(i), value = defV)
-                ans[pattern] = state
+                params_dict[nameOut] = str (int (state))
 
-        return ans
+        return params_dict
 
-    def params_precision_search (self,):
+    def params_precision_search (self, params_dict):
         lang = st.session_state['lang']
         st.write (
             {'eng' : '＜＜Parameters for precise indexing＞＞',
@@ -229,19 +390,98 @@ class IndexingMenu:
         mes8 = mes['maxLatticeConst']
         maxLatticeConst = st.text_input (mes8, param_8, key = '8')
 
-        return (minPrimeCellV, maxLatticeConst, maxNumZone,
-                numPrimCell, errQvalue, minMwu, minMrev,
-                minDistPoints, maxLatticeConst)
+        params_dict[
+            'MinPrimitiveUnitCellVolume'] = minPrimeCellV
+        params_dict[
+            'MaxPrimitiveUnitCellVolume'] = maxPrimeCellV
+        params_dict[
+            'MaxNumberOfTwoDimTopographs'] = maxNumZone
+        params_dict[
+            'MaxNumberOfLatticeCandidates'] = numPrimCell
+        params_dict[
+            'CriticalValueForLinearSum'] = errQvalue
+        params_dict[
+            'ThresholdOnNormM'] = minMwu
+        params_dict[
+            'ThresholdOnRevM'] = minMrev
+        params_dict[
+            'MinDistanceBetweenLatticePoints'
+                                        ] = minDistPoints
+        params_dict[
+            'MaxNumberOfSolutionsForEachBravaisLattice'
+                                        ] = maxLatticeConst
+        
+        return params_dict
+    
+    def to_jpn (self, eng):
+        return self.lattice_eng2jpn[eng] 
 
+    def put_result_jpn_eng (self,
+            df_bestM, txt_bestM, dict_bestM, latConst,
+            lattice_selected, lattice_candidates):
+        
+        eng = { 'df_bestM' : df_bestM, 'txt_bestM' : txt_bestM,
+                'dict_bestM' : dict_bestM, 'latConst' : latConst,
+                'lattice_selected' : lattice_selected,
+                'lattice_candidates' : lattice_candidates }
+        
+        df_jp = df_bestM.copy()
+        df_jp['CrystalSystem'] = df_jp[
+                            'CrystalSystem'].apply (self.to_jpn)
+        txt_jp = []
+        for txt in txt_bestM:
+            t1, t2 = txt.split (':')
+            t1 = t1.strip(); t2 = t2.strip()
+            txt_jp.append (' : '.join ([self.to_jpn (t1), t2]))
+        
+        dict_jp = {
+            self.to_jpn (k) : v for k, v in dict_bestM.items()}
+        lat_jp = latConst.copy()
+        lat_jp['CrystalSystem'] = lat_jp[
+            'CrystalSystem'].apply (self.to_jpn)
 
+        sel_jp = lattice_selected
+        sel_jp['CrystalSystem'] = self.to_jpn (sel_jp['CrystalSystem'])
 
+        cand_jp = lattice_candidates.copy()
+        cand_jp['CrystalSystem'] = cand_jp['CrystalSystem'].apply (self.to_jpn)
 
-    def menu (self, debug = False):
-        if debug:
-            st.write ('Under development')
-            pass
+        jpn = {'df_bestM' : df_jp, 'txt_bestM' : txt_jp,
+                'dict_bestM' : dict_jp, 'latConst' : lat_jp,
+                'lattice_selected' : sel_jp,
+                'lattice_candidates' : cand_jp}
+        
+        result = {'eng' : eng, 'jpn' : jpn}
+
+        st.session_state['result'] = result
+
+    def get_result (self, res):
+        if res is None: ans = None
+
+        else:
+            if res.status_code == 200:
+                if os.path.exists (self.result_path):
+                    os.remove (self.result_path)
+                with open (self.result_path, 'wb') as f:
+                    f.write (res.content)
+                df_bestM, txt_bestM, dict_bestM = read_for_bestM (self.result_path)
+                latConst = text2lattice (dict_bestM)
+                selected_lattice, lattice_candidates =\
+                      read_lattices_from_xml (self.result_path)
+
+                self.put_result_jpn_eng (
+                    df_bestM, txt_bestM, dict_bestM, latConst,
+                    selected_lattice, lattice_candidates)
+
+                ans = True
+            
+            elif res.status_code == 500:
+                ans = 'Error 500'
+                
+        return ans
+
+    def menu (self, ):
         lang = st.session_state['lang']
-
 
         mes_idx = self.mess['indexing']
         st.write (mes_idx['main'])
@@ -249,32 +489,194 @@ class IndexingMenu:
         if st.session_state['params_idx_defau'] is not None:
             self.display_param ()
 
-            select, nPeak = self.search_level ()
-            print (select, nPeak)
+            newParams = {}
+            newParams = self.search_level (newParams)
+            
+            newParams = self.search_method (newParams)
+            #print (sel, ans)
 
-            sel, ans = self.search_method ()
-            print (sel, ans)
+            newParams = self.nPeakForM (newParams)
+            #print (nPeak)
 
-            nPeak = self.nPeakForM ()
-            print (nPeak)
+            newParams = self.min_max_miller_idx (newParams)
+            #print (minIdx, maxIdx)         
 
-            minIdx, maxIdx = self.min_max_miller_idx ()
-            print (minIdx, maxIdx)         
+            newParams = self.minFOM (newParams)
+            #print (minFOM)
 
-            minFOM = self.minFOM ()
-            print (minFOM)
+            newParams = self.rangeLattice (newParams)
+            #print (minV, maxV)
 
-            minV, maxV = self.rangeLattice ()
-            print (minV, maxV)
+            newParams = self.resolution_err (newParams)
+            #print (resolution)
 
-            resolution = self.resolution_err ()
-            print (resolution)
+            newParams = self.select_lattice_pattern (newParams)
+            #print (patterns)
 
-            patterns = self.select_lattice_pattern ()
-            print (patterns)
+            newParams = self.params_precision_search (newParams)
+            #print (ans)     
+            #st.session_state['params_idx'] = newParams
 
-            ans = self.params_precision_search ()
-            print (ans)        
+            change_inp_xml_indexing (newParams, self.param_path)
+
+
+            if os.path.exists (self.param_path) & os.path.exists (self.peak_path):
+                uploaded_map = self.load_files()
+                #print (list (uploaded_map.keys()))
+                res = self.exec_indexing (uploaded_map)
+                log = self.request_file ('/log_file', self.log_path)
+
+                result = self.get_result (res)
+                if isinstance (result, str):
+                    st.write (res)
+                else:
+                    if result is not None:
+                        fname, numCandidate =\
+                            self.take_indexing_peak_data_selected (uploaded_map)
+                        #st.session_state['list_candidiates'] = [numCandidate]
+                        
+                
+    def disp_bestM (self,):
+        lang = st.session_state['lang']
+        result = st.session_state['result'][lang]
+        df_bestM = result['df_bestM']
+        txt_bestM = result['txt_bestM']
+        dict_bestM = result['dict_bestM']
+        st.table (df_bestM)
+        sel = st.selectbox (
+            {'eng' : 'Select Bravais Lattice..',
+            'jpn' : 'ブラベー格子の選択'}[lang],
+            txt_bestM)
+        sel = sel.split(':')[0].strip()
+        col1, col2 = st.columns (2)
+        with col1:
+            st.write (
+                {'eng' : 'Selected Bravais lattice : ',
+                 'jpn' : '選択されたブラベー格子 : '}[lang])
+        with col2:
+            st.write (sel)
+
+        text = dict_bestM[sel]
+        text = text.replace ('\n', '  \n')
+        st.markdown (text)
+
+    def disp_lattice_consts (self,):
+        lang = st.session_state['lang']
+        result = st.session_state['result'][lang]
+        df = result['latConst']
+        #df = st.session_state['latConst']
+        st.table (df)
+
+    def build_candidate_df (self,):
+        lang = st.session_state['lang']
+        css = {'eng' : list (self.lattice_eng2jpn.keys()),
+                'jpn' : list (self.lattice_eng2jpn.values())}[lang]
+        df = st.session_state['result'][lang]['lattice_candidates']
+        df = df.rename (
+            columns = {
+                'FigureOfMeritWolff' : 'M',
+                'FigureOfMeritWu' : 'Mwu',
+                'ReversedFigureOfMeritWolff' : 'Mrev',
+                'SymmetricFigureOfMeritWolff' : 'Msym',
+                'NumberOfLatticesInNeighborhood' : 'NN',
+                })
+        df['M'] = df['M'].apply (lambda vstr: str (float (vstr)))
+        df['Mwu'] = df['Mwu'].apply (lambda vstr: str (float (vstr)))
+        df['Mrev'] = df['Mrev'].apply (lambda vstr: str (float (vstr)))
+        df['Msym'] = df['Msym'].apply (lambda vstr: str (float (vstr)))
+        df['OptimizedParameters'] = df['OptimizedParameters'].apply (
+            lambda ps: ', '.join ([str(float (p)) for p in ps.split()]))
+
+        values = df.loc[:, ['M', 'Mwu', 'Mrev', 'Msym', 'NN',
+                     'OptimizedParameters']].values
+        values = [', '.join (vs[:-1]) + '; ' + vs[-1] for vs in values]
+        
+        df['for_menu'] = values
+        df['M'] = df['M'].apply (float)
+
+        return df
+
+    def menu_select_candidate (self,):
+        lang = st.session_state['lang']
+        css = {'eng' : list (self.lattice_eng2jpn.keys()),
+                'jpn' : list (self.lattice_eng2jpn.values())}[lang]
+
+        df = self.build_candidate_df ()
+        text = 'M, Mwu, Mrev, Msym, NN; a, b, c, α, β, γ'
+        st.write ({'eng' : 'Bravais lattice  : ',
+                'jpn' : 'ブラベー格子 : '}[lang] + text)
+        
+        selected = {cs : None for cs in css}
+        for cs in css:
+            params = df.loc[df['CrystalSystem'] == cs]
+            if len (params) == 0:
+                st.write (cs)
+            else:
+                params = params.sort_values('M', ascending = False)
+                sels = params['for_menu'].tolist()
+                nums = params['number'].tolist()
+                sel_dict = {sel  : num for sel, num in zip (sels, nums)}
+
+                sels = ['-----'] + sels
+
+                sel = st.selectbox (cs, sels, index = 0,
+                                    key = cs)
+                self.manage_list_candidates (sel, sel_dict)
+                
+        selected_num = st.session_state['list_candidates'][-1]
+        #print (st.session_state['list_candidates'])
+        #print (selected_num)
+        uploaded_map = self.load_files ()
+        fname = self.take_indexing_peak_data (uploaded_map, selected_num)
+
+    def exec_summary (self,):
+        cmd = st.session_state['list_candidates']
+        cmd = '\n'.join (cmd) + '\nquit\n'
+        uploaded_map = self.load_files()
+        res = self.exec_cmd (uploaded_map, cmd)
+        res = self.request_file (
+            add_url= '/get_output_zip',
+            savePath = self.output_zip_path)
+        return res
+
+    def download_output (self, res):
+        if res is not None:
+            lang = st.session_state[lang]
+            with open (self.output_zip_path, 'rb') as f:
+                zip_file = f.read()
+
+            st.download_button (
+                {'end' : 'Download data', 'jpn' : 'ダウンロードデータ'}[lang],
+                data = zip_file,
+                file_name = self.output_zip_path
+            )
+
+
+
+    def manage_list_candidates (self, sel, sel_dict):
+        nums = list (sel_dict.values())
+
+        list_candidates = st.session_state['list_candidates']
+        selected_num = list_candidates.pop (0)
+
+        list_candidates = [n for n in list_candidates if n not in nums]
+        
+        if sel != '-----':
+            list_candidates.append (sel_dict[sel])            
+
+        list_candidates = [selected_num] + list_candidates
+
+        st.session_state['list_candidates'] = list_candidates
+
+
+
+    def display_log (self,):
+        with open (self.log_path, 'r', encoding = 'utf-8') as f:
+            text = f.read()
+        st.text_area ('log', text, height = 400)
+
+
+
 
 if __name__ == '__main__':
     from init import setup_session_state

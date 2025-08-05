@@ -48,12 +48,14 @@ messages = {
             'peakH' : 'Peak height',
             'fwhm' : 'FWHM',
             'sel' : 'Use for indexing',
-            'result' : 'Peak search result',
+            'pks_result' : 'Peak search result',
+            'bestM' : 'Best M',
+            'latticeConst' : 'Lattice constants',
             'log' : 'Log'
         },
 
         'indexing' : {
-            'main' : 'Indexing (under development)',
+            'main' : 'Indexing',
             'param' : 'Indexing parameters',
             
             'level' : 'Search level',
@@ -152,12 +154,14 @@ messages = {
             'peakH' : 'ピーク高さ',
             'fwhm' : '半値幅',
             'sel' : '指標付けに使用',
-            'result' : 'ピークサーチ結果',
+            'pks_result' : 'ピークサーチ結果',
+            'bestM' : 'Best M',
+            'latticeConst' : '格子定数',
             'log' : 'ログ表表示'
         },
 
         'indexing' : {
-            'main' : '指数付け（開発中）',
+            'main' : '指数付け',
             'param' : '指標付けパラメータ',
             
             'level' : '探索レベル',

@@ -4,18 +4,66 @@ import re
 import zipfile
 import pandas as pd
 import xml.etree.ElementTree as ET
+from lxml import etree
 import plotly.graph_objects as go
 from messages import messages as mess
 # streamlitの実行方法 streamlit run ???.py
 
+def read_peak_indexing (path, yvalue = -500):
+    header = 'WAVES/O dphase_0, xphase_0, yphase_0, h_0, k_0, l_0'
+    cols = [col.strip(',') for col in header.split()[1:]]
+
+    end = 'END'
+    df = []; flg = False
+    with open (path, 'r', encoding = 'utf-8') as f:
+        for line in f.readlines ():
+            line = line.strip()
+            if len (line) == 0: continue
+            if (not flg) & (header in line):
+                flg = True
+            elif flg & ('BEGIN' in line): continue
+            elif flg & (end in line):
+                break
+
+            elif flg:
+                line = line.split()
+                df.append (line)
+
+            else: continue
+    
+    df = list (map (list, zip (*df)))
+    df = pd.DataFrame ({k : v for k,v in zip (cols, df)})
+    df = df.loc[:, ['xphase_0', 'h_0', 'k_0', 'l_0']
+        ].rename (columns = {'xphase_0' : 'peakpos',
+                             'h_0' : 'h', 'k_0' : 'k',
+                             'l_0' : 'l'})
+    df['peakpos'] = df['peakpos'].apply (float)
+    df['h'] = df['h'].apply (int)
+    df['k'] = df['k'].apply (int)
+    df['l'] = df['l'].apply (int)
+    
+    
+    df['hkl'] = list (df[['h', 'k', 'l']].values)
+    
+    df = df.drop (['h', 'k', 'l'], axis = 1)
+
+    df['flg'] = df['hkl'].apply (lambda hkl: any (hkl < 0))
+    df['y'] = yvalue
+
+    return df
+
+
+
 def read_output_file (path = 'sample2_pks.histogramIgor',
-                      lang = 'jpn'):
+                      lang = 'eng'):
     df = None; peakdf = None
     with open (path, 'r', encoding='utf-8') as f:
         flg1 = False; flg2 = False; cols1 = None; cols2 = None
         for line in f.readlines ():
             line = line.strip()
+            
             if 'IGOR' in line: continue
+            #elif n_end == 2: break
             elif 'WAVES/O' in line:
                 line = line.replace ('WAVES/O', '').strip()
                 if cols1 is None: cols1 = line.split (', ')
@@ -29,21 +77,24 @@ def read_output_file (path = 'sample2_pks.histogramIgor',
             elif ('END' in line) & flg1:
                 flg1 = False
             elif flg1:
-                line = line.strip().split (' ')
-                line = [float (l.strip()) for l in line if len (l) > 0]
+                if len (line) == 0: continue
+                line = line.split ()
+                line = [float (l) for l in line if len (l) > 0]
                 df.append (line)
             elif ('END' in line) & flg2:
                 flg2 = False
+                break
 
             elif flg2:
-                line = line.strip().split (' ')
-                line = [float (l.strip()) for l in line if len (l) > 0]
+                if len (line) == 0: continue
+                line = line.split ()
+                line = [float (l) for l in line if len (l) > 0]
                 peakdf.append (line)
             
             else: continue
-
-
+    
     df = list (map (list, zip (*df)))
+    
     peakdf = list (map (list, zip (*peakdf)))
     df = {k:v for k,v in zip (cols1, df)}
     peakdf = {k:v for k,v in zip (cols2, peakdf)}
@@ -51,15 +102,21 @@ def read_output_file (path = 'sample2_pks.histogramIgor',
     mes = mess[lang]['graph']
     df = pd.DataFrame (df)
     peakdf = pd.DataFrame (peakdf)
+    
     peakdf['Flag'] = peakdf['Flag'].apply (lambda x: bool (int (x)))
     
-    df.columns = [ 'xphase', 'yphase', 'err_yphase', 'smth_yphase']
+    if len (cols1) == 4:
+        df.columns = [ 'xphase', 'yphase', 'err_yphase', 'smth_yphase']
+    else:
+        df.columns = cols1
     peakdf.columns = [{'eng' : 'Peak', 'jpn' : 'ピーク'}[lang],
                  mes['pos'], mes['peakH'], mes['fwhm'], mes['sel']]    
 
     return df, peakdf
 
-def show_graph (df, peakDf, lang = 'jpn'):
+def show_graph (df, peakDf, peakDf_index = None, lang = 'jpn'):
+    if 'Flag' in peakDf.columns:
+        peakDf = peakDf.loc[peakDf['Flag'] == '1']
     mes = mess[lang]['graph']
     fig = go.Figure()
     fig.add_trace (
@@ -75,8 +132,19 @@ def show_graph (df, peakDf, lang = 'jpn'):
     
     fig.add_trace (go.Scatter (
         x = peakDf[mes['pos']], y = peakDf[mes['peakH']],
-        mode = 'markers', marker = dict (size = 10, symbol = 'triangle-up'),
+        mode = 'markers',
+        marker = dict (size = 10, symbol = 'triangle-up'),
         name = mes['peakPos']))
+
+    if peakDf_index is not None:
+        maxH = peakDf[mes['peakH']].max()
+        y0 = - maxH / 30; y1 = y0 - maxH / 20
+        for pos in peakDf_index['peakpos'].tolist():
+            fig.add_shape (
+                type = 'line',
+                x0 = pos, x1 = pos,
+                y0 = y0, y1 = y1,
+                line = dict (color = 'red', width = 1))
 
     fig.update_xaxes(title = "2θ") # X軸タイトルを指定
     fig.update_yaxes(title = "Intensity") # Y軸タイトルを指定
@@ -172,8 +240,152 @@ def read_inp_xml_conograph (path, root_name = './/ConographParameters'):
 
     return (ans)
 
+def read_for_bestM (path):
+    with open (path, 'rb') as f:
+        tree = etree.parse (f)
+        comments = tree.xpath('//comment()')
+
+    com1 = comments[0].text
+    com2 = comments[1].text
+    df, texts = bestM_1 (com1)
+    ans = bestM_2 (com2)
+
+    return df, texts, ans
+
+def bestM_1 (texts):
+    texts = texts.split ('\n')
+    texts = [t.strip() for t in texts]
+    texts = texts[9:23]
+    cols = ['CrystalSystem', 'TNB', 'M', 'Mwu', 'Mrev', 'Msym', 'NN', 'VOL']
+    valList = []; maxLen = 0
+    for text in texts:
+        text = text.replace (':', '').split()
+        valList.append (text)
+        maxLen = max (maxLen, len (text))
+
+    valList = [val + ['' for _ in range (maxLen - len (val))] for val in valList]
+
+    df = pd.DataFrame (data = valList, columns= cols)
+
+    texts = [reduce_space(text) for text in texts]
+
+    return df, texts
+
+def reduce_space (text):
+    text = text.split()
+    return ' '.join (text)
+
+def text2lattice (ans):
+    df = []
+    for cs, text in ans.items():
+        if '= - - : - -' in text:
+            text = [cs] + ['' for _ in range (6)] + ['0']
+            df.append (text) 
+        else:
+            text = text.split ('\n')
+            df += [[cs] + t.split(':')[1].split() for t in text]
+        
+    cols = ['CrystalSystem', 'a', 'b', 'c', 'alpha', 'beta', 'gamma', 'candidate']
+    df = pd.DataFrame (data = df, columns = cols)
+    #df['val'] = 1
+    count = df['candidate'].value_counts().reset_index()
+    count.columns = ['candidate', 'N']
+    df = pd.merge (df, count, on = 'candidate', how = 'left')
+    countDf = df.sort_values (['candidate', 'N'], ascending = True)
+    countDf = countDf.groupby ('CrystalSystem')[['candidate','N']].agg(list)
+    countDf = countDf['candidate'].apply (lambda x: x[0])
+    df = pd.merge (df, countDf,
+                   on = ['CrystalSystem','candidate'], how = 'right')
+    df = df.drop_duplicates()
+    
+    return df.drop (['candidate', 'N'], axis = 1)
+
+def bestM_2 (texts):
+    texts = texts.split ('\n')[1:]
+    texts = [t.strip() for t in texts if len (t) > 0]
+    #print (texts)
+    ans = {}; key = ''
+    for i, text in enumerate (texts):
+        if len (text) == 0: continue
+        if i % 6 == 0:
+            key = text.split (',')[0]
+            ans[key] = []
+        elif i % 6 <= 3:
+            ans[key].append (reduce_space (text))
+
+        if i % 6 == 3:
+            ans[key] = '\n'.join (ans[key])
+        
+    return ans
+
+def to_jpn (df, texts, ans, latticeConst, cvtTbl):
+    df['CrystalSystem'] = df['CrystalSystem'].apply (lambda x: cvtTbl[x])
+   
+    tmp = texts
+    texts = []
+    for t in tmp:
+       cs = t.split (':')[0].strip()
+       t = t.replace (cs, cvtTbl[cs])
+       texts.append (t)
+
+    ans = {cvtTbl[k] : v for k,v in ans.items()}
+
+    latticeConst['CrystalSystem'] = latticeConst['CrystalSystem'].apply (lambda x: cvtTbl[x])
+
+    return df, texts, ans, latticeConst 
+
+def extract_candidate(elem):
+    ans = {
+        "number": elem.attrib.get("number"),
+        "CrystalSystem": elem.findtext("CrystalSystem"),
+        "OptimizedParameters": elem.findtext("OptimizedLatticeParameters"),
+        "FigureOfMeritWolff": elem.findtext("FigureOfMeritWolff"),
+        "FigureOfMeritWu": elem.findtext("FigureOfMeritWu"),
+        "ReversedFigureOfMeritWolff": elem.findtext("ReversedFigureOfMeritWolff"),
+        "SymmetricFigureOfMeritWolff": elem.findtext("SymmetricFigureOfMeritWolff"),
+        "NumberOfLatticesInNeighborhood": elem.findtext("NumberOfLatticesInNeighborhood"),
+    }
+    
+    return ans
+
+def read_lattices_from_xml (path = 'result.xml'):
+    tree = ET.parse (path)
+    root = tree.getroot ()
+
+    selected = root.find ('.//SelectedLatticeCandidate')
+    selected = extract_candidate (selected)
+    selected = {k : v.strip() for k,v in selected.items()}
+
+    candidates = []
+    for cand in root.findall ('.//LatticeCandidate'):
+        if cand is None: continue
+        cand = extract_candidate (cand)
+        if cand['CrystalSystem'] is None: continue
+        cand = {k : v.strip() for k,v in cand.items()}
+        candidates.append (cand)
+
+    return selected, pd.DataFrame (candidates)
 
 
+
+
+def read_lattice_params (path = 'sample'):
+    with open (path, 'rb') as f:
+        tree = etree.parse (f)
+
+    crystal_systems = tree.xpath("//CrystalSystem/text()")
+    reduced_params = tree.xpath("//ReducedLatticeParameters/text()")
+
+    # 空白を分割し、余分な空白を除去
+    reduced_params_cleaned = [p.strip().split() for p in reduced_params]
+    crystal_systems_cleaned = [c.strip() for c in crystal_systems]
+    print (reduced_params_cleaned)
+    print (crystal_systems_cleaned)
+    print (len (reduced_params_cleaned), len (crystal_systems))
+    #df = pd.DataFrame ({'CrystalSystem' : crystal_systems_cleaned,
+    #                    'latticeConst' : reduced_params_cleaned})
+    #df = df.drop_duplicates()
+    #print (df)
 
 
 def change_inp_xml (params, path):
@@ -210,7 +422,33 @@ def change_inp_xml (params, path):
     ps_params.find('.//Waves/Kalpha1WaveLength').text = str (params['kalpha1'])
     ps_params.find('.//Waves/Kalpha2WaveLength').text = str (params['kalpha2'])
 
-    tree.write (path, encoding = 'utf-8', xml_declaration = True)
+    tree.write (path, encoding = 'utf-8',
+                xml_declaration = True)
+
+def change_inp_xml_indexing (params, path):
+    # params : {
+    # SearchLevel, MaxNumberOfPeaks, IsAngleDispersion,
+    # ConversionParameters, WaveLength,
+    # ZeroPointShiftParameter, MaxNumberOfPeaksForFOM,
+    # MinNumberOfMillerIndicesInRange,
+    # MaxNumberOfMillerIndicesInRange, MinFOM,
+    # MinUnitCellEdgeABC, MaxUnitCellEdgeABC,
+    # Resolution,
+    # MinPrimitiveUnitCellVolume, MaxPrimitiveUnitCellVolume,
+    # MaxNumberOfTwoDimTopographs, MaxNumberOfLatticeCandidates,
+    # CriticalValueForLinearSum, ThresholdOnNormM,
+    # ThresholdOnRevM }
+    tree = ET.parse (path)
+    root = tree.getroot ()
+    ps = root.find ('.//ConographParameters')
+
+    for k, v in params.items():
+        #print (k,v)
+        ps.find (k).text = v
+
+    tree.write (path, encoding = 'utf-8',
+                xml_declaration = True)
+
 
 def zip_folder(folder_path):
     zip_buffer = io.BytesIO()
@@ -224,14 +462,28 @@ def zip_folder(folder_path):
     return zip_buffer
 
 if __name__ == '__main__':
-    #path = 'LOG_PEAKSEARCH.txt'
-    #print (os.path.exists (path))
-    #with open (path, 'r', encoding = 'utf-8') as f:
-    #    text = f.read()
-    #print (text)
-
-    path = 'docs/allumina.inp.xml'
-    params = read_inp_xml_conograph (path)
-    print (params)
-
+    #path = 'api_output/sample_lattice(Rhombohedral;4.76,4.76,6.5,90,90,120;4.72).histogramIgor'
+    #path = 'selected.histogramIgor'
+    #df = read_peak_indexing (path)
+    #print (df)
     
+    
+    #df, peakDf = read_output_file (path, lang = 'eng')
+    #print (df)
+    #print (peakDf)
+    
+    path = 'result.xml'
+    selected, candidates = read_lattices_from_xml (path)
+    print (selected)
+    print (candidates)
+    candidates.to_csv ('candidates.csv')
+    #print (candidates['CrystalSystem'].value_counts())
+
+    #df, texts, ans = read_for_bestM (path)
+    #print (df)
+    #print (texts)
+    #print (ans)   
+ 
+    #ans = text2lattice (ans)
+    #print (ans)
+
