@@ -1,0 +1,25 @@
+PeakSearchInputFile: 
+  ControlParamFile: sample.inp.xml 
+  HistogramDataFile: 
+    FileName: sample.histogramIgor 
+  Outfile: output/sample_pks.histogramIgor 
+
+Histogram format : IGOR
+Errors of y-values : Contained in third column
+
+PeakSearchPSParameters: 
+  ParametersForSmoothingDevision: 
+    NumberOfPointsForSGMethod: 9 
+    EndOfRegion: MAX 
+  PeakSearchRange: 
+    Begin: MIN 
+    End: MAX 
+  UseErrorData: 1 
+  Threshold: 3.0 
+  Alpha2Correction: 1 
+  Waves: 
+    Kalpha1WaveLength: 1.540562 
+    Kalpha2WaveLength: 1.544398 
+
+PeakSeach Program has finished.
+CPU time : 0[sec.]
