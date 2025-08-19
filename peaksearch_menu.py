@@ -13,12 +13,14 @@ class PeakSearchMenu:
     def __init__ (self, ):
         self.api_url = 'https://conograph-api-server.onrender.com'
         #self.api_url = "http://localhost:8000"
-        
+        os.makedirs ('input', exist_ok = True)
+        os.makedirs ('result', exist_ok = True)
+
         self.pathSample = 'sample'
-        self.param_path = 'param.inp.xml'
-        self.hist_path = 'histogram.txt'
-        self.out_path = 'peakdata.txt'
-        self.log_path = 'LOG_PEAKSEARCH.txt'
+        self.param_path = 'input/param.inp.xml'
+        self.hist_path = 'input/histogram.txt'
+        self.out_path = 'result/peakdata.txt'
+        self.log_path = 'result/LOG_PEAKSEARCH.txt'
 
     def set_language (self,):
         if st.session_state is not None:
@@ -320,6 +322,30 @@ class PeakSearchMenu:
         if os.path.exists (self.param_path): os.remove (self.param_path)
         if os.path.exists (self.hist_path): os.remove (self.hist_path)
 
+    def open_param_menu (self, ans):
+        #ans = {k : None for k in [
+        #    'defaultParam', 'df', 'peakDf', 'nPoints', 'endRegion',
+        #    'minRange, maxRange, c_fixed', 'useErr','select',
+        #    'kalpha1', 'kalpha2', 'folder', 'log']}
+        lang = st.session_state['lang']
+        mess_pk = st.session_state['mess_pk']
+        if st.toggle (
+            {'eng' : 'Open parameter menu',
+             'jpn' : 'パラメータメニュー開く'}[lang]):
+            
+            params = st.session_state['params']
+            ans['nPoints'], ans['endRegion'] = \
+                            self.smthParams (params)
+            ans['minRange'], ans['maxRange'] = \
+                            self.rangeParam (params)
+            ans['c_fixed'],  ans['useErr'] = self.thresholdParam (params)
+            select = self.kalpha2Select ()
+            ans['select'] = select
+        
+            if select == mess_pk['exec_sel_1']:
+                ans['kalpha1'], ans['kalpha2'] = self.kaplha2Param (params)
+        return ans
+
     def menu (self,):
         mess_pk = st.session_state['mess_pk']
     
@@ -330,9 +356,10 @@ class PeakSearchMenu:
 
         if st.session_state['params'] is not None:
             default_params = st.session_state['default_params']
-            params = st.session_state['params']
+            
             self.display_param (default_params)
 
+            params = st.session_state['params']
             ans['nPoints'], ans['endRegion'] = \
                             self.smthParams (params)
             ans['minRange'], ans['maxRange'] = \
@@ -364,8 +391,7 @@ class PeakSearchMenu:
                     ans['df'] = df; ans['peakDf'] = peakDf
                     st.session_state['df'] = df
                     st.session_state['peakDf'] = peakDf
-                    peakDf.to_csv ('peakDf.csv')
-            
+                    
     
         return ans
 
@@ -374,7 +400,4 @@ if __name__ == '__main__':
     setup_session_state ()
     st.session_state['lang'] = 'eng'
     obj = PeakSearchMenu()
-    obj.set_language ()
-
-    result = obj.feedbackSelectedPeakToFile(None)
-    print (result)
+    

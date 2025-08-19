@@ -48,6 +48,7 @@ def setup_session_state ():
         st.session_state['list_candidates'] = None
     if 'names_candidate' not in st.session_state:
         st.session_state['names_candidate'] = None
+    #print ('initialized session state.....')
     #if 'peakDf_index_display_camdidate_number' not in st.session_state:
     #    st.session_state['peakDf_index_display_number'] = None
     """
