@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 import requests
 from messages import messages as mess
@@ -9,14 +10,16 @@ class IndexingMenu:
     def __init__(self,):
         #self.api_url = 'http://localhost:8100'
         self.api_url = 'https://conograph-api-indexing.onrender.com'
+        os.makedirs ('input', exist_ok = True)
+        os.makedirs ('result', exist_ok = True)
 
         self.mess = mess['eng']
-        self.param_path = 'param.inp.xml'
-        self.peak_path = 'peakdata.txt'
-        self.log_path = 'LOG_CONOGRAPH.txt'
-        self.result_path = 'result.xml'
-        self.selected_igor_path = 'selected.histogramIgor'
-        self.output_zip_path = 'output.zip'
+        self.param_path = 'input/param.inp.xml'
+        self.peak_path = 'result/peakdata.txt'
+        self.log_path = 'result/LOG_CONOGRAPH.txt'
+        self.result_path = 'result/result.xml'
+        self.selected_igor_path = 'result/selected.histogramIgor'
+        self.output_zip_path = 'result/output.zip'
         self.lattice_eng2jpn = {
             'Cubic(F)' : '立方晶(F)',
             'Cubic(I)' : '立方晶(I)',
@@ -104,6 +107,7 @@ class IndexingMenu:
         if st.button ({'eng' : 'Exec','jpn':'実行'}[lang]):
             
             res = self.exec_cmd (uploaded_map, 'quit\n')
+            st.session_state['list_candidates'] = None
 
             return res
         
@@ -132,15 +136,13 @@ class IndexingMenu:
         #_, selected_lat_peak = read_output_file (self.selected_igor_path)
         selected_lat_peak = read_peak_indexing (self.selected_igor_path)
         st.session_state['peakDf_indexing'] = selected_lat_peak
-        return fname
 
     def take_indexing_peak_data_selected (self, uploaded_map):
         lang = st.session_state['lang']
         result = st.session_state['result'][lang]
         numCandidate = result['lattice_selected']['number']
         st.session_state['list_candidates'] = [numCandidate]
-        fname = self.take_indexing_peak_data (uploaded_map, numCandidate)
-        return fname, numCandidate
+        self.take_indexing_peak_data (uploaded_map, numCandidate)
 
     def get_fname (self, res):
         fname = res.headers.get ('file_name')
@@ -154,15 +156,19 @@ class IndexingMenu:
         if res is None: ans = None
         else:
             if res.status_code == 200:
-                fname = self.get_fname (res)
-                print (fname)
+                fname = self.get_fname (res)                
                 if os.path.exists (savePath):
                     os.remove (savePath)
-                content = res.content.decode ('utf-8')
-                with open (savePath, 'w', encoding = 'utf-8') as f:
-                    f.write (content)
-                #with open (fname, 'w', encoding = 'utf-8') as f:
-                #    f.write (content)
+                
+                suffix = fname.split ('.')[-1]
+                if suffix in ['txt', 'histoGramIgor', 'xml']:
+                    content = res.content.decode ('utf-8')
+                    with open (savePath, 'w', encoding = 'utf-8') as f:
+                        f.write (content)
+                else:
+                    with open (savePath, 'wb') as f:
+                        f.write (res.content)
+
                 ans = fname
             else:
                 ans = 'Error 500'
@@ -187,7 +193,6 @@ class IndexingMenu:
                 ans = 'Error 500'
 
         return ans
-
 
     def search_level (self, params_dict):
         mes, params = self.read_session ()
@@ -416,6 +421,8 @@ class IndexingMenu:
     def to_jpn (self, eng):
         return self.lattice_eng2jpn[eng] 
 
+    # bestM, lattice constant, lattice selected, lattice candidatesの
+    # 結果を和英両方を設定
     def put_result_jpn_eng (self,
             df_bestM, txt_bestM, dict_bestM, latConst,
             lattice_selected, lattice_candidates):
@@ -454,7 +461,7 @@ class IndexingMenu:
         result = {'eng' : eng, 'jpn' : jpn}
 
         st.session_state['result'] = result
-
+ 
     def get_result (self, res):
         if res is None: ans = None
 
@@ -480,61 +487,61 @@ class IndexingMenu:
                 
         return ans
 
-    def menu (self, ):
+    # パラメータ設定メニュー
+    def param_menu (self,):
         lang = st.session_state['lang']
+        newParams = {}
 
+        # toggleが選択されなければ、newParamsは空のまま
+        # toggleが選択されれば、newParamsにはメニューで
+        # 選択されたパラメータが入る
+        if st.toggle (
+            {'eng' : 'Open parameter menu',
+             'jpn' : 'パラメータメニューを開く'}[lang]):
+            newParams = self.search_level (newParams)
+            
+            newParams = self.search_method (newParams)
+
+            newParams = self.nPeakForM (newParams)
+
+            newParams = self.min_max_miller_idx (newParams)
+
+            newParams = self.minFOM (newParams)
+
+            newParams = self.rangeLattice (newParams)
+
+            newParams = self.resolution_err (newParams)
+
+            newParams = self.select_lattice_pattern (newParams)
+
+            newParams = self.params_precision_search (newParams) 
+
+        return newParams
+
+    def menu (self, ):
         mes_idx = self.mess['indexing']
         st.write (mes_idx['main'])
 
         if st.session_state['params_idx_defau'] is not None:
             self.display_param ()
 
-            newParams = {}
-            newParams = self.search_level (newParams)
-            
-            newParams = self.search_method (newParams)
-            #print (sel, ans)
+            newParams = self.param_menu ()
 
-            newParams = self.nPeakForM (newParams)
-            #print (nPeak)
-
-            newParams = self.min_max_miller_idx (newParams)
-            #print (minIdx, maxIdx)         
-
-            newParams = self.minFOM (newParams)
-            #print (minFOM)
-
-            newParams = self.rangeLattice (newParams)
-            #print (minV, maxV)
-
-            newParams = self.resolution_err (newParams)
-            #print (resolution)
-
-            newParams = self.select_lattice_pattern (newParams)
-            #print (patterns)
-
-            newParams = self.params_precision_search (newParams)
-            #print (ans)     
-            #st.session_state['params_idx'] = newParams
-
-            change_inp_xml_indexing (newParams, self.param_path)
-
+            if len (newParams) > 0:
+                change_inp_xml_indexing (newParams, self.param_path)
 
             if os.path.exists (self.param_path) & os.path.exists (self.peak_path):
                 uploaded_map = self.load_files()
-                #print (list (uploaded_map.keys()))
                 res = self.exec_indexing (uploaded_map)
-                log = self.request_file ('/log_file', self.log_path)
-
+                log = self.request_file (
+                    '/log_file', self.log_path)
                 result = self.get_result (res)
                 if isinstance (result, str):
                     st.write (res)
                 else:
                     if result is not None:
-                        fname, numCandidate =\
-                            self.take_indexing_peak_data_selected (uploaded_map)
-                        #st.session_state['list_candidiates'] = [numCandidate]
-                        
+                        self.take_indexing_peak_data_selected (
+                                                    uploaded_map)            
                 
     def disp_bestM (self,):
         lang = st.session_state['lang']
@@ -564,7 +571,6 @@ class IndexingMenu:
         lang = st.session_state['lang']
         result = st.session_state['result'][lang]
         df = result['latConst']
-        #df = st.session_state['latConst']
         st.table (df)
 
     def build_candidate_df (self,):
@@ -606,7 +612,6 @@ class IndexingMenu:
         st.write ({'eng' : 'Bravais lattice  : ',
                 'jpn' : 'ブラベー格子 : '}[lang] + text)
         
-        selected = {cs : None for cs in css}
         for cs in css:
             params = df.loc[df['CrystalSystem'] == cs]
             if len (params) == 0:
@@ -622,12 +627,25 @@ class IndexingMenu:
                 sel = st.selectbox (cs, sels, index = 0,
                                     key = cs)
                 self.manage_list_candidates (sel, sel_dict)
-                
-        selected_num = st.session_state['list_candidates'][-1]
-        #print (st.session_state['list_candidates'])
-        #print (selected_num)
-        uploaded_map = self.load_files ()
-        fname = self.take_indexing_peak_data (uploaded_map, selected_num)
+        
+        if len (st.session_state['list_candidates']) > 1:
+            selected_num = st.session_state['list_candidates'][-1]
+            uploaded_map = self.load_files ()
+            start = time.time ()
+            #print ('#3 start_take_indexing_peak_data')
+            fname = self.take_indexing_peak_data (
+                        uploaded_map, selected_num)
+            #end = time.time()
+            #print ('time {} sec'.format (end - start))
+
+    def operation_summary (self,):
+        lang = st.session_state['lang']
+        flg = st.button (
+            {'eng' : 'Get histogramIgor files after refinement...',
+             'jpn' : '細密化されたhistogramIgorファイルの入手'}[lang])
+        if flg:
+            res = self.exec_summary ()
+            self.download_output (res)
 
     def exec_summary (self,):
         cmd = st.session_state['list_candidates']
@@ -640,18 +658,17 @@ class IndexingMenu:
         return res
 
     def download_output (self, res):
-        if res is not None:
-            lang = st.session_state[lang]
+        if (res is not None) and (res != 'Error 500'):
+            lang = st.session_state['lang']
             with open (self.output_zip_path, 'rb') as f:
                 zip_file = f.read()
 
             st.download_button (
-                {'end' : 'Download data', 'jpn' : 'ダウンロードデータ'}[lang],
+                {'eng' : 'Download data',
+                 'jpn' : 'ダウンロードデータ'}[lang],
                 data = zip_file,
                 file_name = self.output_zip_path
             )
-
-
 
     def manage_list_candidates (self, sel, sel_dict):
         nums = list (sel_dict.values())
@@ -668,15 +685,10 @@ class IndexingMenu:
 
         st.session_state['list_candidates'] = list_candidates
 
-
-
     def display_log (self,):
         with open (self.log_path, 'r', encoding = 'utf-8') as f:
             text = f.read()
         st.text_area ('log', text, height = 400)
-
-
-
 
 if __name__ == '__main__':
     from init import setup_session_state
