@@ -9,8 +9,9 @@ from indexing_menu import IndexingMenu
 
 class MainMenu:
     def __init__ (self,):
-        self.param_path = 'param.inp.xml'
-        self.hist_path = 'histogram.txt'
+        os.makedirs ('input', exist_ok = True)
+        self.param_path = 'input/param.inp.xml'
+        self.hist_path = 'input/histogram.txt'
         self.log_peak = 'LOG_PEAKSEARCH.txt'
         self.log_index = 'LOG_CONOGRAPH.txt'
         self.path_sample = 'Sample'
@@ -216,6 +217,7 @@ if __name__ == '__main__':
             #objIndexing.disp_lattice_consts ()
             objIndexing.menu_select_candidate ()
             #print (st.session_state['selected_candidates'])
+            objIndexing.operation_summary ()
 
         with graph_log_area:
             if sel_gr == sels_gr[0]:
