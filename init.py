@@ -48,20 +48,13 @@ def setup_session_state ():
         st.session_state['list_candidates'] = None
     if 'names_candidate' not in st.session_state:
         st.session_state['names_candidate'] = None
-    #print ('initialized session state.....')
-    #if 'peakDf_index_display_camdidate_number' not in st.session_state:
-    #    st.session_state['peakDf_index_display_number'] = None
-    """
-    if 'df_bestM' not in st.session_state:
-        st.session_state['df_bestM'] = None
-    if 'txt_bestM' not in st.session_state:
-        st.session_state['txt_bestM'] = None
-    if 'dict_bestM' not in st.session_state:
-        st.session_state['dict_bestM'] = None
-    if 'latConst' not in st.session_state:
-        st.session_state['latConst'] = None
-    if 'lattice_selected' not in st.session_state:
-        st.session_state['lattice_selected'] = None
-    if 'lattice_candidates' not in st.session_state:
-        st.session_state['lattice_candidates'] = None"""
+
+    if 'menu_status' not in st.session_state:
+        st.session_state['complete_jobs'] = None
+    if 'menu_upload' not in st.session_state:
+        st.session_state['menu_upload'] = None
+    if 'menu_peaksearch' not in st.session_state:
+        st.session_state['menu_peaksearch'] = None
+    if 'menu_indexing' not in st.session_state:
+        st.session_state['menu_indexing'] = None
     

@@ -17,7 +17,8 @@ class MainMenu:
         self.path_sample = 'Sample'
 
     def select_langage (self,):
-        lang_sel = st.radio ('langage', ['English', 'Japanese'],
+        lang_sel = st.radio (
+            'langage', ['English', 'Japanese'],
                              horizontal = True)
         if lang_sel == 'English': lang = 'eng'
         else: lang = 'jpn'
@@ -57,14 +58,13 @@ class MainMenu:
     
     def select_general_menu (self,):
         lang = st.session_state['lang']
-        menus = [{'eng' : 'Download samples...',
-                 'jpn' : 'サンプルダウンロード'}[lang],
-                {'eng' : 'Upload files (paremeter, histgram)',
-                 'jpn' : 'ファイルUpload (parameter、histogram)'}[lang],
-                mess[lang]['peaksearch']['main'],
-                mess[lang]['indexing']['main'],
-                {'eng' : 'Download parameter file...',
-                 'jpn' : 'パラメータファイルのダウンロード'}[lang]]
+
+        #menus = [mess[lang]['peaksearch']['main']]
+        #if st.session_state['menu_peaksearch']:
+        #    menus += [mess[lang]['indexing']['main']]
+        
+        menus = [mess[lang]['peaksearch']['main'],
+                 mess[lang]['indexing']['main']]
         
         select_menu = st.radio (
             {'eng' : 'Menu selection',
@@ -80,11 +80,6 @@ class MainMenu:
                             'jpn': 'パラメータファイル (xml) アップロード'}[lang],
                             type = ["xml"], key = "param")
         if st.session_state['param_name'] is not None:
-            name = st.session_state['param_name']
-            st.write (
-                {'eng' : 'File {} is saved.'.format (name),
-                 'jpn' : 'ファイル {} が保存されています。'.format(name)
-                 }[lang])
             params = read_inp_xml (self.param_path)
             st.session_state['params'] = params
         
@@ -92,13 +87,8 @@ class MainMenu:
                             {'eng' : 'Upload histogram file',
                             'jpn': 'ヒストグラムファイル アップロード'}[lang],
                             type = ["dat", "histogramIgor", "histogramigor"], key = "hist")
-        if st.session_state['hist_name'] is not None:
-            name = st.session_state['hist_name']
-            st.write (
-                {'eng' : 'File {} is saved.'.format (name),
-                 'jpn' : 'ファイル {} が保存されています。'.format(name)
-                 }[lang])
-
+            
+        flg1 = False; flg2 = False
         if param_file:
             st.session_state['param_name'] = param_file.name
             with open (self.param_path, 'wb') as f:
@@ -110,18 +100,23 @@ class MainMenu:
             params_idx = read_inp_xml_conograph (self.param_path)
             st.session_state['params_idx_defau'] = params_idx
             st.session_state['params_idx'] = params_idx
+            flg1 = True
 
         if hist_file:
             st.session_state['hist_name'] = hist_file.name
             with open (self.hist_path, 'wb') as f:
                 f.write (hist_file.getbuffer ())
+            flg2 = True
+
+        if flg1 & flg2:
+            st.session_state['menu_upload'] = True
+            #st.session_state['menu_peaksearch'] = False
 
         if (param_file is not None) & (hist_file is not None):
             if os.path.exists (self.log_peak):
                 os.remove (self.log_peak)
             if os.path.exists (self.log_index):
                 os.remove (self.log_index)
-            st.session_state['peakDf_indexing'] = None
 
     def down_load_sample (self,):
         lang = st.session_state['lang']
@@ -148,11 +143,14 @@ class MainMenu:
             )
         
     def remarks (self,):
-        st.write ('<<< Open side menu!! サイドメニューを開いてください。>>>>')
+        #st.write ('<<< Open side menu!! サイドメニューを開いてください。>>>>')
         st.write ('<<<<Remarks>>>>')
-        st.write ('Please note that this web page is provided as a test version and is different from the official CONOGRAPH application available at https://z-code-software.com/.')
-        st.write ('このwebページはテスト運用として公開されているページであり、https://z-code-software.com/ にあるCONOGRAPH本体と異なります。')
-
+        lang = st.session_state['lang']
+        if lang is None: lang = 'eng'
+        remarks = {
+            'eng' : 'Please note that this web page is provided as a test version and is different from the official CONOGRAPH application available at https://z-code-software.com/.',
+            'jpn' : 'このwebページはテスト運用として公開されているページであり、https://z-code-software.com/ にあるCONOGRAPH本体と異なります。'}[lang]
+        st.write (remarks)
 
 if __name__ == '__main__':
     setup_session_state()
@@ -160,36 +158,38 @@ if __name__ == '__main__':
     objIndexing = IndexingMenu ()
     objMain = MainMenu ()
     
-    objMain.remarks ()    
+    remark = st.empty()
     title = st.empty()
     sel_graph_space = st.empty ()
     
     with st.sidebar:   
         objMain.select_langage ()
         lang = st.session_state['lang']
+        with remark: objMain.remarks()
         objPeakSearch.set_language ()
         objIndexing.set_language ()
+
+        objMain.down_load_sample ()
+        objMain.upload_files ()
+
 
         #タイトル表記    
         with title:
             st.title (mess[lang]['main_title'])
 
-        select_menu, menus = objMain.select_general_menu()
-
-        if select_menu == menus[0]:
-            objMain.down_load_sample ()
-
-        elif select_menu == menus[1]:
-            objMain.upload_files ()
-
-        elif select_menu == menus[2]:
+        if st.session_state['menu_upload']:
             out_pk_menu = objPeakSearch.menu()
-
-        elif select_menu == menus[3]:
+        
+        if st.session_state['menu_peaksearch']:
             objIndexing.menu()
 
-        else:
-            objMain.downloadParamFile ()
+        #select_menu, menus = objMain.select_general_menu()
+
+        #if select_menu == menus[0]:
+        #    out_pk_menu = objPeakSearch.menu()
+
+        #elif select_menu == menus[1]:
+        #    objIndexing.menu()
 
     #----------------------------------------------------
     #   グラフ表示、ピークサーチ結果表示
@@ -206,17 +206,12 @@ if __name__ == '__main__':
         menu_disp = objMain.select_result_display_menu()
         if menu_disp == mes['pks_result']:
             selected = objPeakSearch.edit_table_peak(peakDf)
-            #print (selected)
             st.session_state['peakDf_selected'] = selected
             objPeakSearch.feedbackSelectedPeakToFile (selected)
         elif menu_disp == mes['bestM']:
-                #st.write ('Best M menu')
             objIndexing.disp_bestM ()
         elif menu_disp == mes['latticeConst']:
-            #st.write ('Lattice constatnts')
-            #objIndexing.disp_lattice_consts ()
             objIndexing.menu_select_candidate ()
-            #print (st.session_state['selected_candidates'])
             objIndexing.operation_summary ()
 
         with graph_log_area:
@@ -227,7 +222,9 @@ if __name__ == '__main__':
                 st.plotly_chart (fig, use_container_width = True)
             
             elif sel_gr == sels_gr[1]:
+                log = objPeakSearch.request_log()
                 objPeakSearch.display_log ()
 
             else:
+                log = objIndexing.request_log()
                 objIndexing.display_log()

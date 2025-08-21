@@ -97,14 +97,16 @@ class IndexingMenu:
         params = st.session_state['params_idx_defau']
         #print (params)
         if st.toggle (
-            {'eng' : 'Show Default Parameter',
-            'jpn' : 'パラメータ初期値 表示'}[lang]):
+            {'eng' : 'Show Default Parameter (Indexing)',
+            'jpn' : 'パラメータ初期値 表示 (Indexing)'}[lang],
+            key = 'display_default_param_indexing'):
             text = self.params2text (params)
             st.write (text)
     
     def exec_indexing (self, uploaded_map):
         lang = st.session_state['lang']
-        if st.button ({'eng' : 'Exec','jpn':'実行'}[lang]):
+        if st.button ({'eng' : 'Indexing Exec',
+                       'jpn':'Indexing実行'}[lang]):
             
             res = self.exec_cmd (uploaded_map, 'quit\n')
             st.session_state['list_candidates'] = None
@@ -496,8 +498,9 @@ class IndexingMenu:
         # toggleが選択されれば、newParamsにはメニューで
         # 選択されたパラメータが入る
         if st.toggle (
-            {'eng' : 'Open parameter menu',
-             'jpn' : 'パラメータメニューを開く'}[lang]):
+            {'eng' : 'Open parameter menu (Indexing)',
+             'jpn' : 'パラメータメニュー (Indexing)'}[lang],
+             key = 'parameter_menu_indexing'):
             newParams = self.search_level (newParams)
             
             newParams = self.search_method (newParams)
@@ -519,9 +522,6 @@ class IndexingMenu:
         return newParams
 
     def menu (self, ):
-        mes_idx = self.mess['indexing']
-        st.write (mes_idx['main'])
-
         if st.session_state['params_idx_defau'] is not None:
             self.display_param ()
 
@@ -532,17 +532,25 @@ class IndexingMenu:
 
             if os.path.exists (self.param_path) & os.path.exists (self.peak_path):
                 uploaded_map = self.load_files()
+                #print ('#1-------------')
+                #start = time.time()
                 res = self.exec_indexing (uploaded_map)
-                log = self.request_file (
-                    '/log_file', self.log_path)
+                #log = self.request_file (
+                #    '/log_file', self.log_path)
+                #ed = time.time()
+                #print ('pricess time ', ed - start, ' sec')
                 result = self.get_result (res)
                 if isinstance (result, str):
                     st.write (res)
                 else:
                     if result is not None:
+                        #print ('#2------------------')
+                        #start = time.time()
                         self.take_indexing_peak_data_selected (
                                                     uploaded_map)            
-                
+                        #ed = time.time()
+                        #print ('process time ', ed - start, ' sec')
+
     def disp_bestM (self,):
         lang = st.session_state['lang']
         result = st.session_state['result'][lang]
@@ -631,7 +639,7 @@ class IndexingMenu:
         if len (st.session_state['list_candidates']) > 1:
             selected_num = st.session_state['list_candidates'][-1]
             uploaded_map = self.load_files ()
-            start = time.time ()
+            #start = time.time ()
             #print ('#3 start_take_indexing_peak_data')
             fname = self.take_indexing_peak_data (
                         uploaded_map, selected_num)

@@ -1,13 +1,11 @@
 import os
-#import shutil
-#import copy
+import time
 import numpy as np
 import streamlit as st
 import requests
-#import xml.etree.ElementTree as ET
 from messages import messages as mess
-from dataIO import read_inp_xml, change_inp_xml, zip_folder,\
-                    read_output_file, read_inp_xml_conograph
+from dataIO import read_inp_xml, change_inp_xml,\
+                    read_output_file
 
 class PeakSearchMenu:
     def __init__ (self, ):
@@ -42,20 +40,21 @@ class PeakSearchMenu:
             uploaded_map[param_name] = f.read()
         with open (self.hist_path, 'rb') as f:
             uploaded_map[hist_name] = f.read ()
-        #st.session_state['uploaded_map'] = uploaded_map
         return uploaded_map
 
     def display_param (self, params):
         lang = st.session_state['lang']
         if st.toggle (
-            {'eng' : 'Show Default Parameter',
-            'jpn' : 'パラメータ初期値 表示'}[lang]):
+            {'eng' : 'Show Default Parameter (Peaksearch)',
+            'jpn' : 'パラメータ初期値 表示 (ピークサーチ)'}[lang],
+            key = 'display_default_param_pksearch'):
             text = self.params2text (params)
             st.write (text)
 
     def exec_peaksearch (self, uploaded_map):
         lang = st.session_state['lang']
-        if st.button ({'eng' : 'Exec','jpn':'実行'}[lang]):
+        if st.button ({'eng' : 'Peaksearch Exec',
+                       'jpn':'ピークサーチ実行'}[lang]):
             files = {}
             for fname, fobj in uploaded_map.items():
                 files[fname] = (fname, fobj,
@@ -93,18 +92,13 @@ class PeakSearchMenu:
                 mess_gr['pos'], mess_gr['peakH'],
                 mess_gr['fwhm'], mess_gr['sel']]
 
-        #st.write (mess_gr['pks_result'])
         edited_df = st.data_editor (
             dispDf,
             column_config = {
                 mess_gr['sel']: st.column_config.CheckboxColumn(
                             mess_gr['sel'], default = True)},
             use_container_width = True)
-        #selected = edited_df.loc[edited_df[mess_gr['sel']] == True]
-        #selected.columns = peakDf.columns
         edited_df = edited_df.rename (columns = {mess_gr['sel'] : 'Flag'})
-        #selected = selected.rename (columns = {'Use for indexing' : 'Flag'})
-        #return selected
         return edited_df
 
     def feedbackSelectedPeakToFile (self, selected):
@@ -113,25 +107,20 @@ class PeakSearchMenu:
             lines = f.readlines ()
 
         st = None; ed = None; flg = False
-        #txt_st = None; txt_ed = None
         for i, line in enumerate (lines):
             if 'WAVES/O peak, peakpos, height, FWHM, Flag' in line:
                 flg = True
             elif flg & ('BEGIN' in line):
                 st = i + 1
-                #txt_st = lines[st]
 
             if st is not None:
                 for j in range (i + 1, len (lines)):
                     if 'END' in lines[j]: break
                     ed = j
-                    #txt_ed = lines[ed]
             
                 break
 
         lines_1, lines_2 = lines[:st], lines[ed + 1:]
-        #print (lines_1[-1]) # BEGIN
-        #print (lines_2[0]) # END
 
         new_lines = []
         cols = selected.columns
@@ -146,10 +135,6 @@ class PeakSearchMenu:
         ans = ''.join (ans)
         with open (self.out_path, 'w', encoding = 'utf-8') as f:
             f.write (ans)
-
-        #return ans
-                    
-
 
     def smthParams (self, params):
         mess_pk = st.session_state['mess_pk']
@@ -243,9 +228,7 @@ class PeakSearchMenu:
     def operationParam (self, params, savePath):
         defParams = st.session_state['params']
         mess_pk = st.session_state['mess_pk']
-        #nPoins = params['nPoints']; endRegion = params['endRegion']
         minRange = params['minRange'] #; maxRange = params['maxRange']
-        #c_fixed = params['c_fixed'];
         useErr = params['useErr']
         select = params['select']
         kalpha1 = params['kalpha1']; kalpha2 = params['kalpha2']
@@ -330,8 +313,9 @@ class PeakSearchMenu:
         lang = st.session_state['lang']
         mess_pk = st.session_state['mess_pk']
         if st.toggle (
-            {'eng' : 'Open parameter menu',
-             'jpn' : 'パラメータメニュー開く'}[lang]):
+            {'eng' : 'Open parameter menu (Peaksearch)',
+             'jpn' : 'パラメータメニュー (ピークサーチ)'}[lang],
+             key = 'parameter_menu_pksearch'):
             
             params = st.session_state['params']
             ans['nPoints'], ans['endRegion'] = \
@@ -344,11 +328,13 @@ class PeakSearchMenu:
         
             if select == mess_pk['exec_sel_1']:
                 ans['kalpha1'], ans['kalpha2'] = self.kaplha2Param (params)
-        return ans
+        
+            self.operationParam (ans, self.param_path)
 
-    def menu (self,):
-        mess_pk = st.session_state['mess_pk']
-    
+        return ans
+        
+
+    def menu (self,):    
         ans = {k : None for k in [
             'defaultParam', 'df', 'peakDf', 'nPoints', 'endRegion',
             'minRange, maxRange, c_fixed', 'useErr','select',
@@ -358,30 +344,17 @@ class PeakSearchMenu:
             default_params = st.session_state['default_params']
             
             self.display_param (default_params)
-
-            params = st.session_state['params']
-            ans['nPoints'], ans['endRegion'] = \
-                            self.smthParams (params)
-            ans['minRange'], ans['maxRange'] = \
-                            self.rangeParam (params)
-            ans['c_fixed'],  ans['useErr'] = self.thresholdParam (params)
-            select = self.kalpha2Select ()
-            ans['select'] = select
-        
-            if select == mess_pk['exec_sel_1']:
-                ans['kalpha1'], ans['kalpha2'] = self.kaplha2Param (params)
-
-            self.operationParam (ans, self.param_path)
+            ans = self.open_param_menu (ans)
 
         exec_space = st.empty ()
 
         with exec_space:
             if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
                 uploaded_map = self.load_files ()
-                #print (st.session_state['uploaded_map'])
+    
                 res = self.exec_peaksearch (uploaded_map)
-                log = self.request_log ()
-      
+                #log = self.request_log ()
+                
                 result = self.get_result (res)
 
                 if isinstance (result, str):
@@ -391,6 +364,7 @@ class PeakSearchMenu:
                     ans['df'] = df; ans['peakDf'] = peakDf
                     st.session_state['df'] = df
                     st.session_state['peakDf'] = peakDf
+                    st.session_state['menu_peaksearch'] = True
                     
     
         return ans
