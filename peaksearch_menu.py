@@ -4,8 +4,7 @@ import numpy as np
 import streamlit as st
 import requests
 from messages import messages as mess
-from dataIO import read_inp_xml, change_inp_xml,\
-                    read_output_file
+from dataIO import change_inp_xml, read_output_file
 
 class PeakSearchMenu:
     def __init__ (self, ):
@@ -55,6 +54,7 @@ class PeakSearchMenu:
         lang = st.session_state['lang']
         if st.button ({'eng' : 'Peaksearch Exec',
                        'jpn':'ピークサーチ実行'}[lang]):
+            
             files = {}
             for fname, fobj in uploaded_map.items():
                 files[fname] = (fname, fobj,
@@ -62,13 +62,14 @@ class PeakSearchMenu:
             
             res = requests.post (
                 self.api_url + '/run_cpp', files = files)
+            
             return res
         return None
 
     def request_log (self,):
         res = requests.post (
             self.api_url + '/log_file')
-        
+
         if res is None: ans = None
         else:
             if res.status_code == 200:
@@ -365,6 +366,7 @@ class PeakSearchMenu:
                     st.session_state['df'] = df
                     st.session_state['peakDf'] = peakDf
                     st.session_state['menu_peaksearch'] = True
+                    st.session_state['peakDf_indexing'] = None
                     
     
         return ans

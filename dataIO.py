@@ -1,5 +1,6 @@
 import io
 import os
+import time
 import re
 import zipfile
 import pandas as pd
@@ -137,20 +138,21 @@ def show_graph (df, peakDf, peakDf_index = None, lang = 'jpn'):
         name = mes['peakPos']))
 
     if peakDf_index is not None:
-        maxH = peakDf[mes['peakH']].max()
+        maxH = peakDf[mes['peakH']].max(); 
         y0 = - maxH / 30; y1 = y0 - maxH / 20
-        for pos in peakDf_index['peakpos'].tolist():
-            fig.add_shape (
-                type = 'line',
-                x0 = pos, x1 = pos,
+            
+        shapes = [
+            dict (type = 'line', x0 = pos, x1 = pos,
                 y0 = y0, y1 = y1,
                 line = dict (color = 'red', width = 1))
+            for pos in peakDf_index['peakpos'].tolist()]
+        fig.update_layout(shapes = shapes)
 
-    fig.update_xaxes(title = "2θ") # X軸タイトルを指定
-    fig.update_yaxes(title = "Intensity") # Y軸タイトルを指定
+    fig.update_xaxes(title = '2θ') # X軸タイトルを指定
+    fig.update_yaxes(title = 'Intensity') # Y軸タイトルを指定
     fig.update_layout (showlegend = True)
     #fig.write_html (savePath)
-    return (fig)
+    return fig
     
 def read_cntl_inp_xml (path):
     # XMLファイルを読み込む
@@ -303,7 +305,7 @@ def text2lattice (ans):
 def bestM_2 (texts):
     texts = texts.split ('\n')[1:]
     texts = [t.strip() for t in texts if len (t) > 0]
-    #print (texts)
+
     ans = {}; key = ''
     for i, text in enumerate (texts):
         if len (text) == 0: continue
@@ -366,28 +368,6 @@ def read_lattices_from_xml (path = 'result.xml'):
 
     return selected, pd.DataFrame (candidates)
 
-
-
-
-def read_lattice_params (path = 'sample'):
-    with open (path, 'rb') as f:
-        tree = etree.parse (f)
-
-    crystal_systems = tree.xpath("//CrystalSystem/text()")
-    reduced_params = tree.xpath("//ReducedLatticeParameters/text()")
-
-    # 空白を分割し、余分な空白を除去
-    reduced_params_cleaned = [p.strip().split() for p in reduced_params]
-    crystal_systems_cleaned = [c.strip() for c in crystal_systems]
-    print (reduced_params_cleaned)
-    print (crystal_systems_cleaned)
-    print (len (reduced_params_cleaned), len (crystal_systems))
-    #df = pd.DataFrame ({'CrystalSystem' : crystal_systems_cleaned,
-    #                    'latticeConst' : reduced_params_cleaned})
-    #df = df.drop_duplicates()
-    #print (df)
-
-
 def change_inp_xml (params, path):
     # params : {num_points : , end_region : ,
     #           range_begin : , range_end : ,
@@ -443,7 +423,6 @@ def change_inp_xml_indexing (params, path):
     ps = root.find ('.//ConographParameters')
 
     for k, v in params.items():
-        #print (k,v)
         ps.find (k).text = v
 
     tree.write (path, encoding = 'utf-8',
@@ -462,28 +441,10 @@ def zip_folder(folder_path):
     return zip_buffer
 
 if __name__ == '__main__':
-    #path = 'api_output/sample_lattice(Rhombohedral;4.76,4.76,6.5,90,90,120;4.72).histogramIgor'
-    #path = 'selected.histogramIgor'
-    #df = read_peak_indexing (path)
-    #print (df)
-    
-    
-    #df, peakDf = read_output_file (path, lang = 'eng')
-    #print (df)
-    #print (peakDf)
-    
+  
     path = 'result.xml'
     selected, candidates = read_lattices_from_xml (path)
     print (selected)
     print (candidates)
     candidates.to_csv ('candidates.csv')
-    #print (candidates['CrystalSystem'].value_counts())
-
-    #df, texts, ans = read_for_bestM (path)
-    #print (df)
-    #print (texts)
-    #print (ans)   
- 
-    #ans = text2lattice (ans)
-    #print (ans)
 

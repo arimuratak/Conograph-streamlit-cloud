@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 from init import setup_session_state
 from messages import messages as mess
@@ -18,7 +19,7 @@ class MainMenu:
 
     def select_langage (self,):
         lang_sel = st.radio (
-            'langage', ['English', 'Japanese'],
+            'Select', ['English', 'Japanese'],
                              horizontal = True)
         if lang_sel == 'English': lang = 'eng'
         else: lang = 'jpn'
@@ -59,10 +60,6 @@ class MainMenu:
     def select_general_menu (self,):
         lang = st.session_state['lang']
 
-        #menus = [mess[lang]['peaksearch']['main']]
-        #if st.session_state['menu_peaksearch']:
-        #    menus += [mess[lang]['indexing']['main']]
-        
         menus = [mess[lang]['peaksearch']['main'],
                  mess[lang]['indexing']['main']]
         
@@ -110,7 +107,7 @@ class MainMenu:
 
         if flg1 & flg2:
             st.session_state['menu_upload'] = True
-            #st.session_state['menu_peaksearch'] = False
+            #st.session_state['menu_peaksearch'] = None
 
         if (param_file is not None) & (hist_file is not None):
             if os.path.exists (self.log_peak):
@@ -123,8 +120,8 @@ class MainMenu:
         zip_bytes = zip_folder (self.path_sample)
         st.download_button (
             label = {
-                'eng':'Download sample data (zip format)', 
-                'jpn' : 'サンプルデータ ダウンロード (zip形式)'}[lang],
+                'eng':'Download sample data\n(zip format)', 
+                'jpn' : 'サンプルデータ ダウンロード\n(zip形式)'}[lang],
             data = zip_bytes,
             file_name = 'sample.zip')
     
@@ -162,14 +159,15 @@ if __name__ == '__main__':
     title = st.empty()
     sel_graph_space = st.empty ()
     
-    with st.sidebar:   
-        objMain.select_langage ()
+    with st.sidebar:
+        col1, col2 = st.columns (2)   
+        with col1: objMain.select_langage ()
         lang = st.session_state['lang']
         with remark: objMain.remarks()
         objPeakSearch.set_language ()
         objIndexing.set_language ()
 
-        objMain.down_load_sample ()
+        with col2: objMain.down_load_sample ()
         objMain.upload_files ()
 
 
@@ -182,14 +180,6 @@ if __name__ == '__main__':
         
         if st.session_state['menu_peaksearch']:
             objIndexing.menu()
-
-        #select_menu, menus = objMain.select_general_menu()
-
-        #if select_menu == menus[0]:
-        #    out_pk_menu = objPeakSearch.menu()
-
-        #elif select_menu == menus[1]:
-        #    objIndexing.menu()
 
     #----------------------------------------------------
     #   グラフ表示、ピークサーチ結果表示

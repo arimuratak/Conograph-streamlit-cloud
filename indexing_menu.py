@@ -95,7 +95,7 @@ class IndexingMenu:
     def display_param (self,):
         lang = st.session_state['lang']
         params = st.session_state['params_idx_defau']
-        #print (params)
+        
         if st.toggle (
             {'eng' : 'Show Default Parameter (Indexing)',
             'jpn' : 'パラメータ初期値 表示 (Indexing)'}[lang],
@@ -132,10 +132,10 @@ class IndexingMenu:
 
     def take_indexing_peak_data (self, uploaded_map, numCandidate):
         cmd = numCandidate + '\nquit\n'
-        
+
         res = self.exec_cmd (uploaded_map, cmd)
         fname = self.request_file ('/get_histogramIgor', self.selected_igor_path)
-        #_, selected_lat_peak = read_output_file (self.selected_igor_path)
+
         selected_lat_peak = read_peak_indexing (self.selected_igor_path)
         st.session_state['peakDf_indexing'] = selected_lat_peak
 
@@ -524,7 +524,6 @@ class IndexingMenu:
     def menu (self, ):
         if st.session_state['params_idx_defau'] is not None:
             self.display_param ()
-
             newParams = self.param_menu ()
 
             if len (newParams) > 0:
@@ -532,24 +531,17 @@ class IndexingMenu:
 
             if os.path.exists (self.param_path) & os.path.exists (self.peak_path):
                 uploaded_map = self.load_files()
-                #print ('#1-------------')
-                #start = time.time()
                 res = self.exec_indexing (uploaded_map)
                 #log = self.request_file (
                 #    '/log_file', self.log_path)
-                #ed = time.time()
-                #print ('pricess time ', ed - start, ' sec')
+
                 result = self.get_result (res)
                 if isinstance (result, str):
                     st.write (res)
                 else:
                     if result is not None:
-                        #print ('#2------------------')
-                        #start = time.time()
                         self.take_indexing_peak_data_selected (
                                                     uploaded_map)            
-                        #ed = time.time()
-                        #print ('process time ', ed - start, ' sec')
 
     def disp_bestM (self,):
         lang = st.session_state['lang']
@@ -620,6 +612,9 @@ class IndexingMenu:
         st.write ({'eng' : 'Bravais lattice  : ',
                 'jpn' : 'ブラベー格子 : '}[lang] + text)
         
+        numSelectedCandidate =\
+            st.session_state['result'][lang]['lattice_selected']['number']
+        
         for cs in css:
             params = df.loc[df['CrystalSystem'] == cs]
             if len (params) == 0:
@@ -632,19 +627,20 @@ class IndexingMenu:
 
                 sels = ['-----'] + sels
 
-                sel = st.selectbox (cs, sels, index = 0,
+                if numSelectedCandidate in nums: idx = 1
+                else: idx = 0
+
+                sel = st.selectbox (cs, sels, index = idx, # = idx
                                     key = cs)
                 self.manage_list_candidates (sel, sel_dict)
         
         if len (st.session_state['list_candidates']) > 1:
             selected_num = st.session_state['list_candidates'][-1]
-            uploaded_map = self.load_files ()
-            #start = time.time ()
-            #print ('#3 start_take_indexing_peak_data')
-            fname = self.take_indexing_peak_data (
+            if selected_num != numSelectedCandidate:
+                uploaded_map = self.load_files ()
+
+                fname = self.take_indexing_peak_data (
                         uploaded_map, selected_num)
-            #end = time.time()
-            #print ('time {} sec'.format (end - start))
 
     def operation_summary (self,):
         lang = st.session_state['lang']
