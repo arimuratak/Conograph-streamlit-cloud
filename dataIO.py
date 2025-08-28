@@ -247,13 +247,25 @@ def read_for_bestM (path):
         tree = etree.parse (f)
         comments = tree.xpath('//comment()')
 
+    # Information on the best M solution for each Bravais type.
     com1 = comments[0].text
+    # Labels of the solution with the best figure of merit.
     com2 = comments[1].text
     df, texts = bestM_1 (com1)
     ans = bestM_2 (com2)
 
     return df, texts, ans
 
+def arrange_sep (text, sep = ', '):
+    ts = text.split (':')
+    ts_1 = ts[0]; ts_2 = ts[1].strip()
+    ts_2 = sep.join (ts_2.split())
+    ans = ' : '.join ([ts_1, ts_2])
+    return ans
+
+
+# Read index.xml comment of
+# CrystalSystem', 'TNB', 'M', 'Mwu', 'Mrev', 'Msym', 'NN', 'VOL'
 def bestM_1 (texts):
     texts = texts.split ('\n')
     texts = [t.strip() for t in texts]
@@ -261,6 +273,7 @@ def bestM_1 (texts):
     cols = ['CrystalSystem', 'TNB', 'M', 'Mwu', 'Mrev', 'Msym', 'NN', 'VOL']
     valList = []; maxLen = 0
     for text in texts:
+        text = text_sci2fixed (text)
         text = text.replace (':', '').split()
         valList.append (text)
         maxLen = max (maxLen, len (text))
@@ -269,7 +282,9 @@ def bestM_1 (texts):
 
     df = pd.DataFrame (data = valList, columns= cols)
 
-    texts = [reduce_space(text) for text in texts]
+    #texts = [reduce_space(text) for text in texts]
+    texts = [text_sci2fixed (text) for text in texts]
+    texts = [arrange_sep (text) for text in texts]
 
     return df, texts
 
@@ -302,10 +317,19 @@ def text2lattice (ans):
     
     return df.drop (['candidate', 'N'], axis = 1)
 
+def sci2fixed (match):
+    return (str (float (match.group())))
+
+def text_sci2fixed (text):
+    ans = re.sub(r'[-+]?\d*\.\d+e[-+]\d+', sci2fixed, text)
+    return ans
+
+# Read index.xml comment of
+# CrystalSystem', 'Best score', 'Lattice constatnts' 'lLabel'
 def bestM_2 (texts):
     texts = texts.split ('\n')[1:]
-    texts = [t.strip() for t in texts if len (t) > 0]
-
+    texts = [t.strip() for t in texts if len (t) > 0] #Except of Empty space
+    
     ans = {}; key = ''
     for i, text in enumerate (texts):
         if len (text) == 0: continue
@@ -313,7 +337,12 @@ def bestM_2 (texts):
             key = text.split (',')[0]
             ans[key] = []
         elif i % 6 <= 3:
-            ans[key].append (reduce_space (text))
+            #text = reduce_space (text)
+            if '- - : - -' not in text:
+                text = text_sci2fixed (text)
+                text = arrange_sep (text)
+            ans[key].append (text)
+            #ans[key].append (reduce_space (text))
 
         if i % 6 == 3:
             ans[key] = '\n'.join (ans[key])

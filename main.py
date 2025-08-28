@@ -32,12 +32,15 @@ class MainMenu:
         mes_bestM = mess_sel['bestM']
         mes_lat = mess_sel['latticeConst']
         
+        if st.session_state['menu_indexing']:
+            menuList = [mes_pks, mes_bestM, mes_lat]
+        else:
+            menuList = [mes_pks]
 
         sel = st.radio (
             {'eng' : 'Select display menu',
              'jpn' : '結果表示の選択'}[lang],
-            [mes_pks, mes_bestM, mes_lat],
-            horizontal = True)
+            menuList, horizontal = True)
     
         return sel
 
@@ -49,11 +52,16 @@ class MainMenu:
                    'jpn' : 'ログ (ピークサーチ)'}[lang]
         sel_log_2 = {'eng' : 'Log (indexing)',
                    'jpn' : 'ログ (指標付け)'}[lang]
+        
+        if st.session_state['menu_indexing']:
+            menuList = [sel_gr_peak, sel_log_1, sel_log_2]
+        else:
+            menuList = [sel_gr_peak, sel_log_1]
+
         sel = st.radio (
             {'eng' : 'Display Select Graph or Log',
             'jpn' : 'グラフ・ログ表示の選択'}[lang],
-            [sel_gr_peak, sel_log_1, sel_log_2],
-            horizontal = True)
+            menuList, horizontal = True)
     
         return sel, [sel_gr_peak, sel_log_1, sel_log_2]
     
@@ -107,7 +115,12 @@ class MainMenu:
 
         if flg1 & flg2:
             st.session_state['menu_upload'] = True
-            #st.session_state['menu_peaksearch'] = None
+            #print (st.session_state['menu_peaksearch'])
+            #print (st.session_state['menu_indexing'])
+            #st.session_state['df'] = None
+            #st.session_state['peakDf'] = None
+            #st.session_state['menu_peaksearch'] = False
+            #st.session_state['menu_indexing'] = False
 
         if (param_file is not None) & (hist_file is not None):
             if os.path.exists (self.log_peak):

@@ -10,6 +10,7 @@ class IndexingMenu:
     def __init__(self,):
         #self.api_url = 'http://localhost:8100'
         self.api_url = 'https://conograph-api-indexing.onrender.com'
+        #self.api_url = 'https://conograph-api-indexing-1.onrender.com' # Singapore
         os.makedirs ('input', exist_ok = True)
         os.makedirs ('result', exist_ok = True)
 
@@ -107,7 +108,6 @@ class IndexingMenu:
         lang = st.session_state['lang']
         if st.button ({'eng' : 'Indexing Exec',
                        'jpn':'Indexing実行'}[lang]):
-            
             res = self.exec_cmd (uploaded_map, 'quit\n')
             st.session_state['list_candidates'] = None
 
@@ -532,8 +532,6 @@ class IndexingMenu:
             if os.path.exists (self.param_path) & os.path.exists (self.peak_path):
                 uploaded_map = self.load_files()
                 res = self.exec_indexing (uploaded_map)
-                #log = self.request_file (
-                #    '/log_file', self.log_path)
 
                 result = self.get_result (res)
                 if isinstance (result, str):
@@ -541,7 +539,8 @@ class IndexingMenu:
                 else:
                     if result is not None:
                         self.take_indexing_peak_data_selected (
-                                                    uploaded_map)            
+                                                    uploaded_map)
+                        st.session_state['menu_indexing'] = True    
 
     def disp_bestM (self,):
         lang = st.session_state['lang']

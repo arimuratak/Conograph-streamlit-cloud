@@ -366,6 +366,7 @@ class PeakSearchMenu:
                     st.session_state['df'] = df
                     st.session_state['peakDf'] = peakDf
                     st.session_state['menu_peaksearch'] = True
+                    st.session_state['menu_indexing'] = False
                     st.session_state['peakDf_indexing'] = None
                     
     
