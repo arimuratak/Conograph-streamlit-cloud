@@ -15,7 +15,7 @@ class MainMenu:
         self.hist_path = 'input/histogram.txt'
         self.log_peak = 'LOG_PEAKSEARCH.txt'
         self.log_index = 'LOG_CONOGRAPH.txt'
-        self.path_sample = 'Sample'
+        self.path_sample = 'sample'
 
     def select_langage (self,):
         lang_sel = st.radio (
@@ -115,12 +115,6 @@ class MainMenu:
 
         if flg1 & flg2:
             st.session_state['menu_upload'] = True
-            #print (st.session_state['menu_peaksearch'])
-            #print (st.session_state['menu_indexing'])
-            #st.session_state['df'] = None
-            #st.session_state['peakDf'] = None
-            #st.session_state['menu_peaksearch'] = False
-            #st.session_state['menu_indexing'] = False
 
         if (param_file is not None) & (hist_file is not None):
             if os.path.exists (self.log_peak):
