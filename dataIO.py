@@ -233,7 +233,8 @@ def elem_to_dict(elem):
             result[key] = value
     return result
 
-def read_inp_xml_conograph (path, root_name = './/ConographParameters'):
+def read_inp_xml_conograph (
+        path, root_name = './/ConographParameters'):
     tree = ET.parse(path)  # ファイル名を適宜変更
     root = tree.getroot()
     elem = root.find (root_name)
@@ -241,6 +242,21 @@ def read_inp_xml_conograph (path, root_name = './/ConographParameters'):
     ans = elem_to_dict (elem)
 
     return (ans)
+
+def parameter_file_check (
+        path, root_name = 'ZCodeParameters',
+        name_1 = 'ConographParameters',
+        name_2 = 'PeakSearchPSParameters'):
+    
+    tree = ET.parse (path)
+    root = tree.getroot ()
+    
+    if root_name in root.tag:
+        childs = [child.tag for child in root]
+        ans = (name_1 in childs) & (name_2 in childs)
+    else: ans = False
+
+    return ans
 
 def read_for_bestM (path):
     with open (path, 'rb') as f:
@@ -469,11 +485,49 @@ def zip_folder(folder_path):
     zip_buffer.seek(0)
     return zip_buffer
 
+def correct_parameter_datas (folder = 'sample_', savePath = 'all_parameters.csv'):
+    dfs = {'names' : [], 'params_pks' : [], 'params_idx' : []}
+    for dir, _, files in os.walk (folder):
+        if len (files) > 0:
+            for fname in files:
+                if ('inp.xml' in fname) & (fname != 'cntl.inp.xml'):
+                    name = fname.split ('.')[0]
+                    path = os.path.join (dir, fname)
+                    params_pks = read_inp_xml (path)
+                    params_idx = read_inp_xml_conograph (path)
+
+                    dfs['names'].append (name)
+                    dfs['params_pks'].append (params_pks)
+                    dfs['params_idx'].append (params_idx)
+
+    params = {'names' : []}
+    names_pks = []; names_idxs = []
+    for pks in dfs['params_pks'][0].keys():
+        names_pks.append (pks)
+        params[pks] = []
+    for idxs in dfs['params_idx'][0].keys():
+        names_idxs.append (idxs)
+        params[idxs] = []
+    
+    for name, pks, idxs in zip (dfs['names'], dfs['params_pks'], dfs['params_idx']):
+        params['names'].append (name)
+        for  name_pk in names_pks:
+            if name_pk in pks:
+                params[name_pk].append (pks[name_pk])
+            else:
+                params[name_pk].append (None)
+
+        for name_idx in names_idxs:
+            if name_idx in idxs:
+                params[name_idx].append (idxs[name_idx])
+            else:
+                params[name_idx].append (None)    
+        
+    params = pd.DataFrame (params).transpose()
+    params.to_csv (savePath)
+
 if __name__ == '__main__':
-  
-    path = 'result.xml'
-    selected, candidates = read_lattices_from_xml (path)
-    print (selected)
-    print (candidates)
-    candidates.to_csv ('candidates.csv')
+    correct_parameter_datas (
+        folder = 'sample_', savePath = 'all_parameters.csv')
+
 

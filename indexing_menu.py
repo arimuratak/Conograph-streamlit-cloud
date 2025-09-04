@@ -366,8 +366,10 @@ class IndexingMenu:
         param_5 = params['ThresholdOnNormM']
         param_6 = params['ThresholdOnRevM']
         param_7 = params['MinDistanceBetweenLatticePoints']
-        param_8 = params['MaxNumberOfSolutionsForEachBravaisLattice']
-
+        if 'MaxNumberOfSolutionsForEachBravaisLattice' in params:
+            param_8 = params['MaxNumberOfSolutionsForEachBravaisLattice']
+        else: param_8 = None
+        
         mes1 = mes['threshPrim']
         st.write (mes1)
         col1_1, col1_2 = st.columns (2)
@@ -394,8 +396,10 @@ class IndexingMenu:
         mes7 = mes['minDistPoints']
         minDistPoints = st.text_input (mes7, param_7, key = '7')
         
-        mes8 = mes['maxLatticeConst']
-        maxLatticeConst = st.text_input (mes8, param_8, key = '8')
+        if param_8 is not None:
+            mes8 = mes['maxLatticeConst']
+            maxLatticeConst = st.text_input (mes8, param_8, key = '8')
+        else: maxLatticeConst = None
 
         params_dict[
             'MinPrimitiveUnitCellVolume'] = minPrimeCellV
@@ -414,8 +418,9 @@ class IndexingMenu:
         params_dict[
             'MinDistanceBetweenLatticePoints'
                                         ] = minDistPoints
-        params_dict[
-            'MaxNumberOfSolutionsForEachBravaisLattice'
+        if maxLatticeConst is not None:       
+            params_dict[
+                'MaxNumberOfSolutionsForEachBravaisLattice'
                                         ] = maxLatticeConst
         
         return params_dict

@@ -4,7 +4,7 @@ import streamlit as st
 from init import setup_session_state
 from messages import messages as mess
 from dataIO import show_graph, read_inp_xml,\
-    read_inp_xml_conograph, zip_folder
+    read_inp_xml_conograph, zip_folder, parameter_file_check
 from peaksearch_menu import PeakSearchMenu
 from indexing_menu import IndexingMenu
 
@@ -78,34 +78,51 @@ class MainMenu:
         
         return select_menu, menus
 
+    def clear_input_folder (self,):
+        if os.path.exists (self.param_path):
+            os.remove (self.param_path)
+        if os.path.exists (self.hist_path):
+            os.remove (self.hist_path)
+
     def upload_files (self,):
         lang = st.session_state['lang']
+        
         param_file = st.file_uploader(
                             {'eng' : 'Upload parameter file (xml)',
                             'jpn': 'パラメータファイル (xml) アップロード'}[lang],
-                            type = ["xml"], key = "param")
+                            type = ['xml'], key = "param")
+        
         if st.session_state['param_name'] is not None:
             params = read_inp_xml (self.param_path)
             st.session_state['params'] = params
         
         hist_file = st.file_uploader(
-                            {'eng' : 'Upload histogram file',
-                            'jpn': 'ヒストグラムファイル アップロード'}[lang],
-                            type = ["dat", "histogramIgor", "histogramigor"], key = "hist")
+            {'eng' : 'Upload histogram file',
+            'jpn': 'ヒストグラムファイル アップロード'}[lang],
+            type = ['dat', 'histogramIgor', 'histogramigor', 'txt'],
+            key = 'hist')
             
         flg1 = False; flg2 = False
         if param_file:
             st.session_state['param_name'] = param_file.name
             with open (self.param_path, 'wb') as f:
                 f.write (param_file.getbuffer ())
-            params = read_inp_xml (self.param_path)
-            st.session_state ['params'] = params
-            st.session_state['default_params'] = params
+            flg = parameter_file_check (self.param_path)
+            if flg:      
+                params = read_inp_xml (self.param_path)
+                st.session_state ['params'] = params
+                st.session_state['default_params'] = params
             
-            params_idx = read_inp_xml_conograph (self.param_path)
-            st.session_state['params_idx_defau'] = params_idx
-            st.session_state['params_idx'] = params_idx
-            flg1 = True
+                params_idx = read_inp_xml_conograph (self.param_path)
+                st.session_state['params_idx_defau'] = params_idx
+                st.session_state['params_idx'] = params_idx
+                flg1 = True
+            else:
+                os.remove (self.param_path)
+                st.session_state['param_name'] = None
+                st.write (
+                    {'eng' : 'Please upload correct file..',
+                     'jpn' : '正しいファイルをアップロードして下さい。'}[lang])
 
         if hist_file:
             st.session_state['hist_name'] = hist_file.name
