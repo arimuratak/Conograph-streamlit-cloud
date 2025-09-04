@@ -38,8 +38,8 @@ class MainMenu:
             menuList = [mes_pks]
 
         sel = st.radio (
-            {'eng' : 'Select display menu',
-             'jpn' : '結果表示の選択'}[lang],
+            {'eng' : '＜＜Select display menu＞＞',
+             'jpn' : '＜＜結果表示の選択＞＞'}[lang],
             menuList, horizontal = True)
     
         return sel
@@ -59,8 +59,8 @@ class MainMenu:
             menuList = [sel_gr_peak, sel_log_1]
 
         sel = st.radio (
-            {'eng' : 'Display Select Graph or Log',
-            'jpn' : 'グラフ・ログ表示の選択'}[lang],
+            {'eng' : '＜＜Display Select Graph or Log＞＞',
+            'jpn' : '＜＜グラフ・ログ表示の選択＞＞'}[lang],
             menuList, horizontal = True)
     
         return sel, [sel_gr_peak, sel_log_1, sel_log_2]
@@ -120,9 +120,12 @@ class MainMenu:
             else:
                 os.remove (self.param_path)
                 st.session_state['param_name'] = None
+                st.session_state['params'] = None
+                st.session_state['params_idx_defau'] = None
                 st.write (
-                    {'eng' : 'Please upload correct file..',
-                     'jpn' : '正しいファイルをアップロードして下さい。'}[lang])
+                    {'eng' : '********Please upload correct file..********',
+                     'jpn' : '****正しいファイルをアップロードして下さい。****'
+                     }[lang])
 
         if hist_file:
             st.session_state['hist_name'] = hist_file.name
