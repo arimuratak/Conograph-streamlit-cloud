@@ -53,9 +53,7 @@ def read_peak_indexing (path, yvalue = -500):
 
     return df
 
-
-
-def read_output_file (path = 'sample2_pks.histogramIgor',
+def read_histo_file (path = 'sample2_pks.histogramIgor',
                       lang = 'eng'):
     df = None; peakdf = None
     with open (path, 'r', encoding='utf-8') as f:
@@ -95,49 +93,59 @@ def read_output_file (path = 'sample2_pks.histogramIgor',
             else: continue
     
     df = list (map (list, zip (*df)))
-    
-    peakdf = list (map (list, zip (*peakdf)))
     df = {k:v for k,v in zip (cols1, df)}
-    peakdf = {k:v for k,v in zip (cols2, peakdf)}
-
-    mes = mess[lang]['graph']
     df = pd.DataFrame (df)
-    peakdf = pd.DataFrame (peakdf)
+    cols = [ 'xphase', 'yphase', 'err_yphase', 'smth_yphase']
+    colLen = min (len (cols), len (df.columns))
+    cols = cols[:colLen]
+    df = df.loc[:, df.columns[:colLen]]
+    df.columns = cols
+    #if len (cols1) == 4:
+    #    df.columns = [ 'xphase', 'yphase', 'err_yphase', 'smth_yphase']
+    #else:
+    #    df.columns = cols1
     
-    peakdf['Flag'] = peakdf['Flag'].apply (lambda x: bool (int (x)))
+    if peakdf is not None:
+        peakdf = list (map (list, zip (*peakdf)))
+        peakdf = {k:v for k,v in zip (cols2, peakdf)}
+
+        mes = mess[lang]['graph']
+        peakdf = pd.DataFrame (peakdf)
     
-    if len (cols1) == 4:
-        df.columns = [ 'xphase', 'yphase', 'err_yphase', 'smth_yphase']
-    else:
-        df.columns = cols1
-    peakdf.columns = [{'eng' : 'Peak', 'jpn' : 'ピーク'}[lang],
+        peakdf['Flag'] = peakdf['Flag'].apply (lambda x: bool (int (x)))
+    
+    
+        peakdf.columns = [{'eng' : 'Peak', 'jpn' : 'ピーク'}[lang],
                  mes['pos'], mes['peakH'], mes['fwhm'], mes['sel']]    
 
     return df, peakdf
 
 def show_graph (df, peakDf, peakDf_index = None, lang = 'jpn'):
-    if 'Flag' in peakDf.columns:
-        peakDf = peakDf.loc[peakDf['Flag'] == '1']
     mes = mess[lang]['graph']
     fig = go.Figure()
     fig.add_trace (
         go.Scatter (x = df['xphase'], y = df['yphase'],
                     name = mes['diffPattern']))
-    fig.add_trace (
-        go.Scatter (x = df['xphase'], y= df['smth_yphase'],
-                    name = mes['smthCuv']))
     
+    if 'smth_yphase' in df.columns:
+        fig.add_trace (
+            go.Scatter (x = df['xphase'], y= df['smth_yphase'],
+                    name = mes['smthCuv']))
+        
     fig.add_trace (
         go.Scatter (x = df['xphase'], y = df['err_yphase'],
         name = mes['err']))
-    
-    fig.add_trace (go.Scatter (
-        x = peakDf[mes['pos']], y = peakDf[mes['peakH']],
-        mode = 'markers',
-        marker = dict (size = 10, symbol = 'triangle-up'),
-        name = mes['peakPos']))
 
-    if peakDf_index is not None:
+    if peakDf is not None:
+        if 'Flag' in peakDf.columns:
+            peakDf = peakDf.loc[peakDf['Flag'] == '1']    
+        fig.add_trace (go.Scatter (
+            x = peakDf[mes['pos']], y = peakDf[mes['peakH']],
+            mode = 'markers',
+            marker = dict (size = 10, symbol = 'triangle-up'),
+            name = mes['peakPos']))
+
+    if (peakDf_index is not None) & (peakDf is not None):
         maxH = peakDf[mes['peakH']].max(); 
         y0 = - maxH / 30; y1 = y0 - maxH / 20
             
@@ -527,7 +535,9 @@ def correct_parameter_datas (folder = 'sample_', savePath = 'all_parameters.csv'
     params.to_csv (savePath)
 
 if __name__ == '__main__':
-    correct_parameter_datas (
-        folder = 'sample_', savePath = 'all_parameters.csv')
+    df, _ = read_histo_file ('sample/sample3/PyridonePhaseH-SR.histogramIgor')
+    print (df)
+    #correct_parameter_datas (
+    #    folder = 'sample_', savePath = 'all_parameters.csv')
 
 

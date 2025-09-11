@@ -57,4 +57,9 @@ def setup_session_state ():
         st.session_state['menu_peaksearch'] = None
     if 'menu_indexing' not in st.session_state:
         st.session_state['menu_indexing'] = None
+    if 'uploded_param' not in st.session_state:
+        st.session_state['uploaded_param'] = None
+    if 'uploaded_hist' not in st.session_state:
+        st.session_state['uploaded_hist'] = None
     
+setup_session_state ()

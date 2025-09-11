@@ -4,7 +4,7 @@ import numpy as np
 import streamlit as st
 import requests
 from messages import messages as mess
-from dataIO import change_inp_xml, read_output_file
+from dataIO import change_inp_xml, read_histo_file
 
 class PeakSearchMenu:
     def __init__ (self, ):
@@ -54,7 +54,6 @@ class PeakSearchMenu:
         lang = st.session_state['lang']
         if st.button ({'eng' : 'Peaksearch Exec',
                        'jpn':'ピークサーチ実行'}[lang]):
-            
             files = {}
             for fname, fobj in uploaded_map.items():
                 files[fname] = (fname, fobj,
@@ -195,21 +194,14 @@ class PeakSearchMenu:
                            [yes, no], horizontal = True)
         return select
 
-    def kaplha2Param (self, params):
+    def kalpha2Param (self, params):
+        lang = st.session_state['lang']
         mess_pk = st.session_state['mess_pk']
-        mat = np.array ([
-            [0.5594075, 0.563798],
-            [0.709300, 0.713590],
-            [1.540562, 1.544398],
-            [1.788965, 1.792850],
-            [1.936042, 1.939980],
-            [2.289700, 2.293606]])
         kalpha1, kalpha2 = params['kalpha1'], params['kalpha2']
-        kalphas = np.array ([[kalpha1, kalpha2]])
-        dist = np.sqrt (np.power (mat - kalphas, 2).sum(axis = 1))
-        idx = np.argmin (dist)
 
+        noSel = {'jpn' : '選択', 'eng' : 'Select'}[lang]
         params = [
+            noSel,
             'Ag / 0.5594075 / 0.563798',
             'Mo / 0.709300 / 0.713590',
             'Cu / 1.540562 / 1.544398',
@@ -217,12 +209,17 @@ class PeakSearchMenu:
             'Fe / 1.936042 / 1.939980',
             'Cr / 2.289700 / 2.293606']
         
-        sel = st.selectbox (
-            mess_pk['wavelen_mes'],
-            params, index = int (idx))
-        
-        kalpha1, kalpha2 = sel.split (' / ')[1:]
-        #st.write (kalpha1, kalpha2)
+        col1, col2, col3 = st.columns (3)
+        with col3:
+            sel = st.selectbox (
+                mess_pk['wavelen_mes'], params, index = 0)
+
+        if sel != noSel:
+            kalpha1 = kalpha1, kalpha2 = sel.split (' / ')[1:]
+            
+        with col1: kalpha1 = st.text_input ('Kα1', kalpha1)
+        with col2: kalpha2 = st.text_input ('Kα2', kalpha2)
+
         return kalpha1, kalpha2
 
 
@@ -295,7 +292,7 @@ class PeakSearchMenu:
                     os.remove (self.out_path)
                 with open (self.out_path, 'wb') as f:
                     f.write (res.content)
-                ans = read_output_file (self.out_path)
+                ans = read_histo_file (self.out_path)
                 hist_name = st.session_state['hist_name']
                 st.session_state['peak_name'] = hist_name + '_pk'
             elif res.status_code == 500:
@@ -328,7 +325,7 @@ class PeakSearchMenu:
             ans['select'] = select
         
             if select == mess_pk['exec_sel_1']:
-                ans['kalpha1'], ans['kalpha2'] = self.kaplha2Param (params)
+                ans['kalpha1'], ans['kalpha2'] = self.kalpha2Param (params)
         
             self.operationParam (ans, self.param_path)
 
@@ -342,12 +339,11 @@ class PeakSearchMenu:
             'kalpha1', 'kalpha2', 'folder', 'log']}
 
         if st.session_state['params'] is not None:
-            default_params = st.session_state['default_params']
-            
-            self.display_param (default_params)
-            ans = self.open_param_menu (ans)
-
-        exec_space = st.empty ()
+            #default_params = st.session_state['default_params']
+            #self.display_param (default_params)
+            with st.container (border = True):
+                ans = self.open_param_menu (ans)
+                exec_space = st.empty ()
 
         with exec_space:
             if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
@@ -368,7 +364,7 @@ class PeakSearchMenu:
                     st.session_state['menu_peaksearch'] = True
                     st.session_state['menu_indexing'] = False
                     st.session_state['peakDf_indexing'] = None
-                    
+                    #st.session_state['menu_upload'] = False
     
         return ans
 

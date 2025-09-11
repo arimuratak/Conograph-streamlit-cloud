@@ -528,15 +528,20 @@ class IndexingMenu:
 
     def menu (self, ):
         if st.session_state['params_idx_defau'] is not None:
-            self.display_param ()
-            newParams = self.param_menu ()
+            #self.display_param ()
+            
+            with st.container (border = True):
+                newParams = self.param_menu ()
+                exec_space = st.empty ()
 
             if len (newParams) > 0:
                 change_inp_xml_indexing (newParams, self.param_path)
 
             if os.path.exists (self.param_path) & os.path.exists (self.peak_path):
                 uploaded_map = self.load_files()
-                res = self.exec_indexing (uploaded_map)
+    
+                with exec_space:
+                    res = self.exec_indexing (uploaded_map)
 
                 result = self.get_result (res)
                 if isinstance (result, str):
@@ -545,7 +550,8 @@ class IndexingMenu:
                     if result is not None:
                         self.take_indexing_peak_data_selected (
                                                     uploaded_map)
-                        st.session_state['menu_indexing'] = True    
+                        st.session_state['menu_indexing'] = True
+                        #st.session_state['menu_peaksearch'] = False    
 
     def disp_bestM (self,):
         lang = st.session_state['lang']

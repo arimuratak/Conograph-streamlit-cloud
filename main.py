@@ -3,10 +3,21 @@ import time
 import streamlit as st
 from init import setup_session_state
 from messages import messages as mess
-from dataIO import show_graph, read_inp_xml,\
+from dataIO import show_graph, read_inp_xml, read_histo_file,\
     read_inp_xml_conograph, zip_folder, parameter_file_check
 from peaksearch_menu import PeakSearchMenu
 from indexing_menu import IndexingMenu
+
+if st.session_state['menu_upload'] is None:
+    st.session_state['menu_upload'] = False
+if st.session_state['menu_peaksearch'] is None:
+    st.session_state['menu_peaksearch'] = False
+if st.session_state['menu_indexing'] is None:
+    st.session_state['menu_indexing'] = False
+if st.session_state['uploaded_param'] is None:
+    st.session_state['uploaded_param'] = False
+if st.session_state['uploaded_hist'] is None:
+    st.session_state['uploaded_hist'] = False
 
 class MainMenu:
     def __init__ (self,):
@@ -34,20 +45,24 @@ class MainMenu:
         
         if st.session_state['menu_indexing']:
             menuList = [mes_pks, mes_bestM, mes_lat]
-        else:
+        elif st.session_state['menu_peaksearch']:
             menuList = [mes_pks]
+        else : menuList = None
 
-        sel = st.radio (
-            {'eng' : '＜＜Select display menu＞＞',
-             'jpn' : '＜＜結果表示の選択＞＞'}[lang],
-            menuList, horizontal = True)
+        if menuList is not None:
+            sel = st.radio (
+                {'eng' : '＜＜Select display menu＞＞',
+                'jpn' : '＜＜結果表示の選択＞＞'}[lang],
+                menuList, horizontal = True)
     
-        return sel
+            return sel
+        
+        else: return None
 
     def select_graph_display_menu (self,):
         lang = st.session_state['lang']
-        sel_gr_peak = {'eng' : 'Histogram & peak',
-                   'jpn' : 'ヒストグラム (ピーク値)'}[lang]
+        sel_gr_peak = {'eng' : 'Histogram',
+                   'jpn' : 'ヒストグラム'}[lang]
         sel_log_1 = {'eng' : 'Log (peak search)',
                    'jpn' : 'ログ (ピークサーチ)'}[lang]
         sel_log_2 = {'eng' : 'Log (indexing)',
@@ -55,15 +70,22 @@ class MainMenu:
         
         if st.session_state['menu_indexing']:
             menuList = [sel_gr_peak, sel_log_1, sel_log_2]
-        else:
+        elif st.session_state['menu_peaksearch']:
             menuList = [sel_gr_peak, sel_log_1]
+        elif st.session_state['menu_upload']:
+            menuList = [sel_gr_peak]
+        else:
+            menuList = None
 
-        sel = st.radio (
-            {'eng' : '＜＜Display Select Graph or Log＞＞',
-            'jpn' : '＜＜グラフ・ログ表示の選択＞＞'}[lang],
-            menuList, horizontal = True)
+        if menuList is not None:
+            sel = st.radio (
+                {'eng' : '＜＜Display Select Graph or Log＞＞',
+                'jpn' : '＜＜グラフ・ログ表示の選択＞＞'}[lang],
+                menuList, horizontal = True)
     
-        return sel, [sel_gr_peak, sel_log_1, sel_log_2]
+            return sel, [sel_gr_peak, sel_log_1, sel_log_2]
+        
+        else: return None, None
     
     def select_general_menu (self,):
         lang = st.session_state['lang']
@@ -88,9 +110,9 @@ class MainMenu:
         lang = st.session_state['lang']
         
         param_file = st.file_uploader(
-                            {'eng' : 'Upload parameter file (xml)',
-                            'jpn': 'パラメータファイル (xml) アップロード'}[lang],
-                            type = ['xml'], key = "param")
+                {'eng' : 'Upload parameter file (xml)',
+                'jpn': 'パラメータファイル (xml) アップロード'}[lang],
+                type = ['xml'], key = "param")
         
         if st.session_state['param_name'] is not None:
             params = read_inp_xml (self.param_path)
@@ -104,37 +126,53 @@ class MainMenu:
             
         flg1 = False; flg2 = False
         if param_file:
-            st.session_state['param_name'] = param_file.name
             with open (self.param_path, 'wb') as f:
-                f.write (param_file.getbuffer ())
-            flg = parameter_file_check (self.param_path)
-            if flg:      
+                    f.write (param_file.getbuffer ())
+            if parameter_file_check (self.param_path):      
                 params = read_inp_xml (self.param_path)
                 st.session_state ['params'] = params
                 st.session_state['default_params'] = params
-            
                 params_idx = read_inp_xml_conograph (self.param_path)
                 st.session_state['params_idx_defau'] = params_idx
                 st.session_state['params_idx'] = params_idx
                 flg1 = True
+                if (st.session_state['param_name'] is None) or (
+                    st.session_state['param_name'] != param_file.name):
+                    st.session_state['uploaded_param'] = True
+                    st.session_state['param_name'] = param_file.name
             else:
                 os.remove (self.param_path)
                 st.session_state['param_name'] = None
                 st.session_state['params'] = None
                 st.session_state['params_idx_defau'] = None
                 st.write (
-                    {'eng' : '********Please upload correct file..********',
-                     'jpn' : '****正しいファイルをアップロードして下さい。****'
-                     }[lang])
+                        {'eng' : '********Please upload correct file..********',
+                        'jpn' : '****正しいファイルをアップロードして下さい。****'
+                        }[lang])
 
         if hist_file:
-            st.session_state['hist_name'] = hist_file.name
-            with open (self.hist_path, 'wb') as f:
-                f.write (hist_file.getbuffer ())
             flg2 = True
+            with open (self.hist_path, 'wb') as f:
+                    f.write (hist_file.getbuffer ())
+            df, _ = read_histo_file (self.hist_path)
+            st.session_state['df'] = df
+            
+            if (st.session_state['hist_name'] is None) or (
+                st.session_state['hist_name'] != hist_file.name):
+                st.session_state['hist_name'] = hist_file.name
+                st.session_state['uploaded_hist'] = True
 
         if flg1 & flg2:
             st.session_state['menu_upload'] = True
+
+        if st.session_state['uploaded_hist']:
+            st.session_state['menu_peaksearch'] = False
+            st.session_state['menu_indexing'] = False
+            
+            st.session_state['peakDf'] = None
+            st.session_state['peakDf_selected'] = None
+            st.session_state['peakDf_indexing'] = None
+            st.session_state['uploaded_hist'] = False
 
         if (param_file is not None) & (hist_file is not None):
             if os.path.exists (self.log_peak):
@@ -177,7 +215,7 @@ class MainMenu:
         st.write (remarks)
 
 if __name__ == '__main__':
-    setup_session_state()
+    #setup_session_state()
     objPeakSearch = PeakSearchMenu ()
     objIndexing = IndexingMenu ()
     objMain = MainMenu ()
@@ -195,7 +233,8 @@ if __name__ == '__main__':
         objIndexing.set_language ()
 
         with col2: objMain.down_load_sample ()
-        objMain.upload_files ()
+        with st.container (border = True):
+            objMain.upload_files ()
 
 
         #タイトル表記    
@@ -216,20 +255,27 @@ if __name__ == '__main__':
 
     mes = mess[lang]['graph']
 
-    if (df is not None) & (peakDf is not None):
-        sel_gr, sels_gr = objMain.select_graph_display_menu ()
-
-        graph_log_area = st.empty()
-        menu_disp = objMain.select_result_display_menu()
-        if menu_disp == mes['pks_result']:
-            selected = objPeakSearch.edit_table_peak(peakDf)
-            st.session_state['peakDf_selected'] = selected
-            objPeakSearch.feedbackSelectedPeakToFile (selected)
-        elif menu_disp == mes['bestM']:
-            objIndexing.disp_bestM ()
-        elif menu_disp == mes['latticeConst']:
-            objIndexing.menu_select_candidate ()
-            objIndexing.operation_summary ()
+    if st.session_state['menu_upload'
+            ] | st.session_state['menu_peaksearch'
+                ] | st.session_state['menu_indexing']:
+        
+        with st.container (border = True):
+            sel_gr, sels_gr = objMain.select_graph_display_menu ()
+            graph_log_area = st.empty()
+        
+        with st.container (border = True):
+            menu_disp = objMain.select_result_display_menu()
+        #assert menu_disp is not None
+            if menu_disp == mes['pks_result']:
+                if peakDf is not None:
+                    selected = objPeakSearch.edit_table_peak(peakDf)
+                    st.session_state['peakDf_selected'] = selected
+                    objPeakSearch.feedbackSelectedPeakToFile (selected)
+            elif menu_disp == mes['bestM']:
+                objIndexing.disp_bestM ()
+            elif menu_disp == mes['latticeConst']:
+                objIndexing.menu_select_candidate ()
+                objIndexing.operation_summary ()
 
         with graph_log_area:
             if sel_gr == sels_gr[0]:
