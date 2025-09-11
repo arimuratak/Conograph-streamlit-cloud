@@ -502,10 +502,11 @@ class IndexingMenu:
         # toggleが選択されなければ、newParamsは空のまま
         # toggleが選択されれば、newParamsにはメニューで
         # 選択されたパラメータが入る
-        if st.toggle (
+        with st.expander (
             {'eng' : 'Open parameter menu (Indexing)',
-             'jpn' : 'パラメータメニュー (Indexing)'}[lang],
-             key = 'parameter_menu_indexing'):
+             'jpn' : 'パラメータメニュー (Indexing)'}[lang]#,
+             #key = 'parameter_menu_indexing'
+             ):
             newParams = self.search_level (newParams)
             
             newParams = self.search_method (newParams)

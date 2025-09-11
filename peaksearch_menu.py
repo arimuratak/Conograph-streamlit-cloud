@@ -310,10 +310,11 @@ class PeakSearchMenu:
         #    'kalpha1', 'kalpha2', 'folder', 'log']}
         lang = st.session_state['lang']
         mess_pk = st.session_state['mess_pk']
-        if st.toggle (
+        with st.expander (
             {'eng' : 'Open parameter menu (Peaksearch)',
-             'jpn' : 'パラメータメニュー (ピークサーチ)'}[lang],
-             key = 'parameter_menu_pksearch'):
+             'jpn' : 'パラメータメニュー (ピークサーチ)'}[lang] #,
+             #key = 'parameter_menu_pksearch'
+             ):
             
             params = st.session_state['params']
             ans['nPoints'], ans['endRegion'] = \
