@@ -504,9 +504,7 @@ class IndexingMenu:
         # 選択されたパラメータが入る
         with st.expander (
             {'eng' : 'Open parameter menu (Indexing)',
-             'jpn' : 'パラメータメニュー (Indexing)'}[lang]#,
-             #key = 'parameter_menu_indexing'
-             ):
+             'jpn' : 'パラメータメニュー (Indexing)'}[lang]):
             newParams = self.search_level (newParams)
             
             newParams = self.search_method (newParams)

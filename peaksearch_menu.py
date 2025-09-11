@@ -312,9 +312,7 @@ class PeakSearchMenu:
         mess_pk = st.session_state['mess_pk']
         with st.expander (
             {'eng' : 'Open parameter menu (Peaksearch)',
-             'jpn' : 'パラメータメニュー (ピークサーチ)'}[lang] #,
-             #key = 'parameter_menu_pksearch'
-             ):
+             'jpn' : 'パラメータメニュー (ピークサーチ)'}[lang]):
             
             params = st.session_state['params']
             ans['nPoints'], ans['endRegion'] = \
