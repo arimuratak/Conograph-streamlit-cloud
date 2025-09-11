@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<ZCodeParameters>
+  <ConographParameters>
+    <SearchLevel>
+    <!-- 0:quick search (suitable for lattices with higher symmetries.),
+         1:regular search (suitable for lattices with lower symmetries.).-->
+         0
+    </SearchLevel>
+    
+    <!-- Number of reflections for calculation.-->
+    <MaxNumberOfPeaks> AUTO </MaxNumberOfPeaks>
+    
+    <!-- 0:tof, 1:angle dispersion-->
+    <IsAngleDispersion> 1 </IsAngleDispersion>
+    
+    <!-- Conversion parameters for tof : a polynomial of any degree -->
+    <ConversionParameters>       </ConversionParameters>
+    
+    <!-- Wave length(angstrom) for angle dispersion. -->
+    <WaveLength> 1.2368 </WaveLength>
+    
+    <!-- Peak shift parameters for angle dispersion : Z(deg.), Ds(deg.), Ts(deg.).
+         2*d*sin(theta0) = Wlength, 2*theta = 2*theta0 + Z + Ds*cos(theta0) + Ts*sin(2*theta0). -->
+    <ZeroPointShiftParameter> 0.0 </ZeroPointShiftParameter>
+    
+    <!-- Number of reflections to calculate figure of Merit.
+         Input a number >=20 even if reflections in a diffraction pattern is less than 20.-->
+    <MaxNumberOfPeaksForFOM> 20 </MaxNumberOfPeaksForFOM>
+    
+    <!-- Number of hkl among input reflections.-->
+    <MinNumberOfMillerIndicesInRange> AUTO </MinNumberOfMillerIndicesInRange>
+    <MaxNumberOfMillerIndicesInRange> AUTO </MaxNumberOfMillerIndicesInRange>
+    
+    <!-- Output the candidates with better FOM than the following value.-->
+    <MinFOM> 3.0 </MinFOM>
+    
+    <!-- Minimum and maximum of the unit cell edges a, b, c (angstrom).-->
+    <MinUnitCellEdgeABC> 0.0 </MinUnitCellEdgeABC>
+    <MaxUnitCellEdgeABC> 1000.0 </MaxUnitCellEdgeABC>
+    
+    <!-- Relative resolution to judge if two lattices are equivalent or not.
+         If the relative difference of two lattice parameters are within this value, 
+         only the one with better figure of merit is output.-->
+    <Resolution> 0.03 </Resolution>
+    
+    <!-- Minimum of the volume of primitive unit-cell (>=0) -->
+    <MinPrimitiveUnitCellVolume>	AUTO </MinPrimitiveUnitCellVolume>
+    
+    <!-- Maximum of the volume of primitive unit-cell (>0) -->
+    <MaxPrimitiveUnitCellVolume>	AUTO </MaxPrimitiveUnitCellVolume>
+    
+    <!-- Maximum number of quadruples (q1,q2,q3,q4) taken from selected topographs.-->
+    <MaxNumberOfTwoDimTopographs> AUTO </MaxNumberOfTwoDimTopographs>
+    
+    <!-- Maximum number of seeds of 3-dimensional topographs -->
+    <MaxNumberOfLatticeCandidates> AUTO </MaxNumberOfLatticeCandidates>
+    
+    <!-- The critical value c to judge if a linear sum of Q eqauls zero. ( abs(\sigma_i Q_i) <= c * Err<\sigma_i Q_i> ) -->
+    <CriticalValueForLinearSum>	1.0 </CriticalValueForLinearSum>
+    
+    <ThresholdOnNormM> <!-- Solutions having M^{Wu} less than this value are removed before Bravais lattice determination -->
+      1.9
+    </ThresholdOnNormM>
+    <ThresholdOnRevM> <!-- Solutions having M^{Rev} less than this value are removed before Bravais lattice determination -->
+      1.0
+    </ThresholdOnRevM>
+    <MinDistanceBetweenLatticePoints>
+      2.0
+    </MinDistanceBetweenLatticePoints>
+    <MaxNumberOfSolutionsForEachBravaisLattice>
+      1000
+    </MaxNumberOfSolutionsForEachBravaisLattice>
+    
+    <!--Output for each crystal system? (0:No, 1:Yes)-->
+    <OutputTriclinic>     1 </OutputTriclinic>
+    <OutputMonoclinicP>   1 </OutputMonoclinicP>
+    <OutputMonoclinicB>   1 </OutputMonoclinicB>
+    <OutputOrthorhombicP> 1 </OutputOrthorhombicP>
+    <OutputOrthorhombicC> 1 </OutputOrthorhombicC>
+    <OutputOrthorhombicI> 1 </OutputOrthorhombicI>
+    <OutputOrthorhombicF> 1 </OutputOrthorhombicF>
+    <OutputTetragonalP>   1 </OutputTetragonalP>
+    <OutputTetragonalI>   1 </OutputTetragonalI>
+    <OutputRhombohedral>  1 </OutputRhombohedral>
+    <OutputHexagonal>     1 </OutputHexagonal>
+    <OutputCubicP>        1 </OutputCubicP>
+    <OutputCubicI>        1 </OutputCubicI>
+    <OutputCubicF>        1 </OutputCubicF>
+
+    <!-- Configuration parameters.-->
+    <NumberOfThreadsToUse>
+      19
+    </NumberOfThreadsToUse>
+    <AxisForRhombohedralSymmetry> <!-- "Rhombohedral" or "Hexagonal" -->
+      Hexagonal
+    </AxisForRhombohedralSymmetry>
+    <AxisForMonoclinicSymmetry> <!-- "A", "B", or "C" -->
+      B
+    </AxisForMonoclinicSymmetry>
+  </ConographParameters>
+  
+  <PeakSearchPSParameters>
+    <ParametersForSmoothingDevision>
+      <!--NumberOfPointsForSGMethod : odd number.-->
+      <NumberOfPointsForSGMethod> 9 </NumberOfPointsForSGMethod>
+      <EndOfRegion>
+      <!-- The maximum point of smoothing range. -->
+       MAX
+      </EndOfRegion>
+    </ParametersForSmoothingDevision>
+    
+    <PeakSearchRange>
+      <Begin> 0.0 </Begin>
+      <End>   MAX </End>
+    </PeakSearchRange>
+    
+    <!--0 : Use the threshold, 1 : Use a constant times the error of y-value as a threshold.-->
+    <UseErrorData> 1 </UseErrorData>
+    
+    <!--When "UseErrorData" is 0, it is used as the threshold for peak-search.
+        Otherwise, "Threshold" times the error of y-value as a threshold.-->
+    <Threshold> 5.0 </Threshold>
+    
+    <!-- 0 : deconvolution is not applied.
+         1 : deconvolution is applied.-->
+    <Alpha2Correction> 0 </Alpha2Correction>
+    <Waves>
+      <Kalpha1WaveLength> 1.54056 </Kalpha1WaveLength>
+      <Kalpha2WaveLength> 1.54439 </Kalpha2WaveLength>
+    </Waves>
+  </PeakSearchPSParameters>
+</ZCodeParameters>
