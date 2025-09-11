@@ -62,4 +62,4 @@ def setup_session_state ():
     if 'uploaded_hist' not in st.session_state:
         st.session_state['uploaded_hist'] = None
     
-setup_session_state ()
+#setup_session_state ()

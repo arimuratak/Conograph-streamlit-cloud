@@ -8,6 +8,8 @@ from dataIO import show_graph, read_inp_xml, read_histo_file,\
 from peaksearch_menu import PeakSearchMenu
 from indexing_menu import IndexingMenu
 
+setup_session_state ()
+
 if st.session_state['menu_upload'] is None:
     st.session_state['menu_upload'] = False
 if st.session_state['menu_peaksearch'] is None:
