@@ -61,6 +61,20 @@ class MainMenu:
         
         else: return None
 
+    def tabs_result_display (self,):
+        mess_sel = mess[lang]['graph']
+        mes_pks = mess_sel['pks_result']
+        mes_bestM = mess_sel['bestM']
+        mes_lat = mess_sel['latticeConst']
+        
+        if st.session_state['menu_indexing']:
+            menuList = [mes_pks, mes_bestM, mes_lat]
+        elif st.session_state['menu_peaksearch']:
+            menuList = [mes_pks]
+        else : menuList = None
+        
+        return menuList
+
     def select_graph_display_menu (self,):
         lang = st.session_state['lang']
         sel_gr_peak = {'eng' : 'Histogram',
@@ -89,6 +103,25 @@ class MainMenu:
         
         else: return None, None
     
+    def tabs_graph_log_display (self,):
+        lang = st.session_state['lang']
+        sel_gr_peak = {'eng' : 'Histogram',
+                   'jpn' : 'ヒストグラム'}[lang]
+        sel_log_1 = {'eng' : 'Log (peak search)',
+                   'jpn' : 'ログ (ピークサーチ)'}[lang]
+        sel_log_2 = {'eng' : 'Log (indexing)',
+                   'jpn' : 'ログ (指標付け)'}[lang]
+        
+        if st.session_state['menu_indexing']:
+            menuList = [sel_gr_peak, sel_log_1, sel_log_2]
+        elif st.session_state['menu_peaksearch']:
+            menuList = [sel_gr_peak, sel_log_1]
+        elif st.session_state['menu_upload']:
+            menuList = [sel_gr_peak]
+        else:
+            menuList = None
+        return menuList
+
     def select_general_menu (self,):
         lang = st.session_state['lang']
 
@@ -216,6 +249,16 @@ class MainMenu:
             'jpn' : 'このwebページはテスト運用として公開されているページであり、https://z-code-software.com/ にあるCONOGRAPH本体と異なります。'}[lang]
         st.write (remarks)
 
+    def tabs_pks_idx (self,):
+        lang = st.session_state['lang']
+        tabs = []
+        if st.session_state['menu_upload']:
+            tabs.append ({
+                'eng':'Peaksearch', 'jpn' : 'ピークサーチ'}[lang])
+        if st.session_state['menu_peaksearch']:
+            tabs.append ('Indexing')
+        return tabs
+
 if __name__ == '__main__':
     #setup_session_state()
     objPeakSearch = PeakSearchMenu ()
@@ -238,16 +281,53 @@ if __name__ == '__main__':
         with st.container (border = True):
             objMain.upload_files ()
 
-
         #タイトル表記    
         with title:
             st.title (mess[lang]['main_title'])
 
+        if st.session_state['menu_upload'] | st.session_state['menu_peaksearch']:
+            tab_pks, tab_idx = st.tabs ([
+                {'eng' : 'Peaksearch', 'jpn' :'ピークサーチ'}[lang],
+                'Indexing'])
+
         if st.session_state['menu_upload']:
-            out_pk_menu = objPeakSearch.menu()
-        
+            with tab_pks:
+                out_pk_menu = objPeakSearch.menu()
+
         if st.session_state['menu_peaksearch']:
-            objIndexing.menu()
+            with tab_idx:
+                objIndexing.menu()
+
+        #tabs = objMain.tabs_pks_idx ()
+        #print (tabs)
+        #if len (tabs):
+        #    for i, tab in enumerate (st.tabs (tabs)):
+        #        with tab:
+        #            if i == 0:
+        #                out_pk_menu = objPeakSearch.menu()
+        #            elif i == 1:
+        #                objIndexing.menu()
+
+        #print (st.session_state['menu_upload'],
+        #       st.session_state['menu_peaksearch'])
+        #if (st.session_state['menu_upload'] == True) & (
+        #    st.session_state['menu_peaksearch'] == False):
+        #    tab_pks = st.tabs (
+        #        [{'eng' : 'Peaksearch','jpn' : 'ピークサーチ'}[lang]])[0]
+
+        #    with tab_pks:
+        #        out_pk_menu = objPeakSearch.menu()
+        
+        #elif (st.session_state['menu_upload'] == True
+        #      ) & (st.session_state['menu_peaksearch'] == True):
+        #    tab_pks, tab_idx = st.tabs (
+        #        [{'eng' : 'Peaksearch','jpn' : 'ピークサーチ'}[lang],
+        #         'Indexing'])
+            
+        #    with tab_pks:
+        #        out_pk_menu = objPeakSearch.menu()
+        #    with tab_idx:
+        #        objIndexing.menu ()
 
     #----------------------------------------------------
     #   グラフ表示、ピークサーチ結果表示
@@ -262,34 +342,41 @@ if __name__ == '__main__':
                 ] | st.session_state['menu_indexing']:
         
         with st.container (border = True):
-            sel_gr, sels_gr = objMain.select_graph_display_menu ()
+            #sel_gr, sels_gr = objMain.select_graph_display_menu ()
+            tabs_gr = objMain.tabs_graph_log_display ()
             graph_log_area = st.empty()
         
         with st.container (border = True):
-            menu_disp = objMain.select_result_display_menu()
-        #assert menu_disp is not None
-            if menu_disp == mes['pks_result']:
-                if peakDf is not None:
-                    selected = objPeakSearch.edit_table_peak(peakDf)
-                    st.session_state['peakDf_selected'] = selected
-                    objPeakSearch.feedbackSelectedPeakToFile (selected)
-            elif menu_disp == mes['bestM']:
-                objIndexing.disp_bestM ()
-            elif menu_disp == mes['latticeConst']:
-                objIndexing.menu_select_candidate ()
-                objIndexing.operation_summary ()
+            menuList = objMain.tabs_result_display()
+            if menuList is not None:
+                for tab, menu in zip (st.tabs (menuList), menuList):
+                    with tab:
+                        if menu == mes['pks_result']:
+                            if peakDf is not None:
+                                selected = objPeakSearch.edit_table_peak(peakDf)
+                                st.session_state['peakDf_selected'] = selected
+                                objPeakSearch.feedbackSelectedPeakToFile (selected)
+                        elif menu == mes['bestM']:
+                            objIndexing.disp_bestM ()
+                        elif menu == mes['latticeConst']:
+                            objIndexing.menu_select_candidate ()
+                            objIndexing.operation_summary ()
+                    
+
+
 
         with graph_log_area:
-            if sel_gr == sels_gr[0]:
-                selected = st.session_state['peakDf_selected']
-                peakDf_indexing = st.session_state['peakDf_indexing']
-                fig = show_graph (df, selected, peakDf_indexing, lang = lang)
-                st.plotly_chart (fig, use_container_width = True)
-            
-            elif sel_gr == sels_gr[1]:
-                log = objPeakSearch.request_log()
-                objPeakSearch.display_log ()
-
-            else:
-                log = objIndexing.request_log()
-                objIndexing.display_log()
+            for tab, menu in zip (st.tabs (tabs_gr), tabs_gr):
+                with tab:
+                    if menu == tabs_gr[0]:
+                        selected = st.session_state['peakDf_selected']
+                        peakDf_indexing = st.session_state['peakDf_indexing']
+                        fig = show_graph (df, selected, peakDf_indexing, lang = lang)
+                        st.plotly_chart (fig, use_container_width = True)
+                    elif menu == tabs_gr[1]:
+                        log = objPeakSearch.request_log()
+                        objPeakSearch.display_log ()
+                    else:
+                        log = objIndexing.request_log()
+                        objIndexing.display_log()
+                
