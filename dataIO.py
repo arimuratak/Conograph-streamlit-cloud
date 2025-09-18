@@ -7,6 +7,7 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from lxml import etree
 import plotly.graph_objects as go
+from collections import defaultdict
 from messages import messages as mess
 # streamlitの実行方法 streamlit run ???.py
 
@@ -53,8 +54,27 @@ def read_peak_indexing (path, yvalue = -500):
 
     return df
 
+def histogram_file_check (path = 'sample2_pks.histogramIgor'):
+    flg = True
+    try:
+        with open (path, 'r', encoding = 'utf-8') as f:
+            text = f.read()
+    except:
+        flg = False
+
+    if flg:
+        flg &= 'IGOR' in text
+        flg &= 'WAVES/O' in text
+        flg &= 'BEGIN' in text
+        flg &= 'END' in text
+
+    return flg        
+
 def read_histo_file (path = 'sample2_pks.histogramIgor',
                       lang = 'eng'):
+    flg = histogram_file_check (path)
+    if not flg: return None, None
+
     df = None; peakdf = None
     with open (path, 'r', encoding='utf-8') as f:
         flg1 = False; flg2 = False; cols1 = None; cols2 = None
@@ -278,7 +298,9 @@ def read_for_bestM (path):
     df, texts = bestM_1 (com1)
     ans = bestM_2 (com2)
 
-    return df, texts, ans
+    cand_exists = df['TNB'].apply (int).sum() > 0
+
+    return df, texts, ans, cand_exists
 
 def arrange_sep (text, sep = ', '):
     ts = text.split (':')
@@ -295,7 +317,7 @@ def bestM_1 (texts):
     texts = [t.strip() for t in texts]
     texts = texts[9:23]
     cols = ['CrystalSystem', 'TNB', 'M', 'Mwu', 'Mrev', 'Msym', 'NN', 'VOL']
-    valList = []; maxLen = 0
+    valList = []; maxLen = len(cols) #0
     for text in texts:
         text = text_sci2fixed (text)
         text = text.replace (':', '').split()
@@ -319,16 +341,17 @@ def reduce_space (text):
 def text2lattice (ans):
     df = []
     for cs, text in ans.items():
-        if '= - - : - -' in text:
-            text = [cs] + ['' for _ in range (6)] + ['0']
+        if '- - : - -' in text:
+            #text = [cs] + ['-' for _ in range (6)] + ['0']
+            text = [cs, '-', '-', '-', '-', '-', '-', '0']
             df.append (text) 
         else:
             text = text.split ('\n')
             df += [[cs] + t.split(':')[1].split() for t in text]
-        
+
     cols = ['CrystalSystem', 'a', 'b', 'c', 'alpha', 'beta', 'gamma', 'candidate']
     df = pd.DataFrame (data = df, columns = cols)
-    #df['val'] = 1
+    
     count = df['candidate'].value_counts().reset_index()
     count.columns = ['candidate', 'N']
     df = pd.merge (df, count, on = 'candidate', how = 'left')
@@ -405,7 +428,26 @@ def extract_candidate(elem):
 
 def read_lattices_from_xml (path = 'result.xml'):
     tree = ET.parse (path)
-    root = tree.getroot ()
+    root = tree.getroot () # ConographOutput
+
+    target = 'SelectedLatticeCandidate'
+    flg = any ([elem.tag == target for elem in root.iter()])
+    
+    if not flg:
+        selected = {
+            'number': '-',
+            'CrystalSystem': '-',
+            'OptimizedParameters': '-',
+            'FigureOfMeritWolff': '-',
+            'FigureOfMeritWu': '-',
+            'ReversedFigureOfMeritWolff': '-',
+            'SymmetricFigureOfMeritWolff': '-',
+            'NumberOfLatticesInNeighborhood': '-'}
+        
+        candidates = pd.DataFrame (
+            {key : [val] for key, val in selected.items()})
+        
+        return selected, candidates 
 
     selected = root.find ('.//SelectedLatticeCandidate')
     selected = extract_candidate (selected)
@@ -535,8 +577,16 @@ def correct_parameter_datas (folder = 'sample_', savePath = 'all_parameters.csv'
     params.to_csv (savePath)
 
 if __name__ == '__main__':
-    df, _ = read_histo_file ('sample/sample3/PyridonePhaseH-SR.histogramIgor')
+    #ans1, ans2 = read_lattices_from_xml ('result/result.xml')
+    #print (ans1)
+    #print (ans2)
+    df, texts, ans, flg = read_for_bestM ('result/result.xml')
     print (df)
+    print (texts)
+    print (ans)
+    print (flg)
+    ##ans = text2lattice (ans)
+    #print (ans)
     #correct_parameter_datas (
     #    folder = 'sample_', savePath = 'all_parameters.csv')
 

@@ -238,9 +238,9 @@ class IndexingMenu:
                 ps = convParams.strip().split (' ')
             else: ps = [' ',' ',' ']
             
-            with col1: p1 = st.text_input ('', ps[0])
-            with col2: p2 = st.text_input ('', ps[1])
-            with col3: p3 = st.text_input ('', ps[2])
+            with col1: p1 = st.text_input ('', ps[0], key = 'conv1')
+            with col2: p2 = st.text_input ('', ps[1], key = 'conv2')
+            with col3: p3 = st.text_input ('', ps[2], key = 'conv3')
 
             ans = ' '.join ([p1, p2, p3])
 
@@ -426,6 +426,8 @@ class IndexingMenu:
         return params_dict
     
     def to_jpn (self, eng):
+        if eng not in self.lattice_eng2jpn:
+            return eng
         return self.lattice_eng2jpn[eng] 
 
     # bestM, lattice constant, lattice selected, lattice candidatesの
@@ -478,7 +480,8 @@ class IndexingMenu:
                     os.remove (self.result_path)
                 with open (self.result_path, 'wb') as f:
                     f.write (res.content)
-                df_bestM, txt_bestM, dict_bestM = read_for_bestM (self.result_path)
+                df_bestM, txt_bestM, dict_bestM,\
+                    candi_exists = read_for_bestM (self.result_path)
                 latConst = text2lattice (dict_bestM)
                 selected_lattice, lattice_candidates =\
                       read_lattices_from_xml (self.result_path)
@@ -486,8 +489,8 @@ class IndexingMenu:
                 self.put_result_jpn_eng (
                     df_bestM, txt_bestM, dict_bestM, latConst,
                     selected_lattice, lattice_candidates)
-
-                ans = True
+                st.session_state['candidate_exist'] = candi_exists
+                ans = candi_exists
             
             elif res.status_code == 500:
                 ans = 'Error 500'
@@ -546,11 +549,16 @@ class IndexingMenu:
                 if isinstance (result, str):
                     st.write (res)
                 else:
-                    if result is not None:
+                    if result:
                         self.take_indexing_peak_data_selected (
                                                     uploaded_map)
                         st.session_state['menu_indexing'] = True
+                        #st.session_state['candidate_exist'] = True                    
                         #st.session_state['menu_peaksearch'] = False    
+                    else:
+                        st.session_state['peakDf_indexing'] = None
+                        #st.session_state['menu_indexing'] = True
+                    #    st.session_state['candidate_exist'] = False
 
     def disp_bestM (self,):
         lang = st.session_state['lang']
@@ -582,10 +590,12 @@ class IndexingMenu:
         df = result['latConst']
         st.table (df)
 
+    def to_float (self, vstr):
+        if vstr == '-': return vstr
+        return str (float (vstr))
+
     def build_candidate_df (self,):
         lang = st.session_state['lang']
-        css = {'eng' : list (self.lattice_eng2jpn.keys()),
-                'jpn' : list (self.lattice_eng2jpn.values())}[lang]
         df = st.session_state['result'][lang]['lattice_candidates']
         df = df.rename (
             columns = {
@@ -595,19 +605,21 @@ class IndexingMenu:
                 'SymmetricFigureOfMeritWolff' : 'Msym',
                 'NumberOfLatticesInNeighborhood' : 'NN',
                 })
-        df['M'] = df['M'].apply (lambda vstr: str (float (vstr)))
-        df['Mwu'] = df['Mwu'].apply (lambda vstr: str (float (vstr)))
-        df['Mrev'] = df['Mrev'].apply (lambda vstr: str (float (vstr)))
-        df['Msym'] = df['Msym'].apply (lambda vstr: str (float (vstr)))
+        
+        df['M'] = df['M'].apply (self.to_float)
+        df['Mwu'] = df['Mwu'].apply (self.to_float)
+        df['Mrev'] = df['Mrev'].apply (self.to_float)
+        df['Msym'] = df['Msym'].apply (self.to_float)
         df['OptimizedParameters'] = df['OptimizedParameters'].apply (
-            lambda ps: ', '.join ([str(float (p)) for p in ps.split()]))
+            lambda ps: ', '.join ([self.to_float(p) for p in ps.split()]))
 
         values = df.loc[:, ['M', 'Mwu', 'Mrev', 'Msym', 'NN',
                      'OptimizedParameters']].values
         values = [', '.join (vs[:-1]) + '; ' + vs[-1] for vs in values]
         
         df['for_menu'] = values
-        df['M'] = df['M'].apply (float)
+        if df['M'].unique()[0] != '-':
+            df['M'] = df['M'].apply (float)
 
         return df
 

@@ -344,27 +344,29 @@ class PeakSearchMenu:
                 ans = self.open_param_menu (ans)
                 exec_space = st.empty ()
 
-        with exec_space:
-            if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
-                uploaded_map = self.load_files ()
+            with exec_space:
+                if os.path.exists (self.param_path) & os.path.exists (self.hist_path):
+                    uploaded_map = self.load_files ()
     
-                res = self.exec_peaksearch (uploaded_map)
-                #log = self.request_log ()
+                    res = self.exec_peaksearch (uploaded_map)
+                    #log = self.request_log ()
                 
-                result = self.get_result (res)
+                    result = self.get_result (res)
 
-                if isinstance (result, str):
-                    st.write (result)
-                elif result is not None:
-                    df, peakDf = result
-                    ans['df'] = df; ans['peakDf'] = peakDf
-                    st.session_state['df'] = df
-                    st.session_state['peakDf'] = peakDf
-                    st.session_state['menu_peaksearch'] = True
-                    st.session_state['menu_indexing'] = False
-                    st.session_state['peakDf_indexing'] = None
-                    #st.session_state['menu_upload'] = False
-    
+                    if isinstance (result, str):
+                        st.write (result)
+                    elif result is not None:
+                        df, peakDf = result
+                        ans['df'] = df; ans['peakDf'] = peakDf
+                        st.session_state['df'] = df
+                        st.session_state['peakDf'] = peakDf
+                        st.session_state['menu_peaksearch'] = True
+                        st.session_state['menu_indexing'] = False
+                        st.session_state['peakDf_indexing'] = None
+                        #st.session_state['menu_upload'] = False
+                        #print ('peaksearch complete!!!')
+                        #print (st.session_state['menu_peaksearch'],
+                        #       st.session_state['menu_indexing'])
         return ans
 
 if __name__ == '__main__':
