@@ -350,8 +350,9 @@ if __name__ == '__main__':
                     if menu == tabs_gr[0]:
                         selected = st.session_state['peakDf_selected']
                         peakDf_indexing = st.session_state['peakDf_indexing']
-                        fig = show_graph (df, selected, peakDf_indexing, lang = lang)
-                        st.plotly_chart (fig, use_container_width = True)
+                        if df is not None:
+                            fig = show_graph (df, selected, peakDf_indexing, lang = lang)
+                            st.plotly_chart (fig, use_container_width = True)
                     elif menu == tabs_gr[1]:
                         log = objPeakSearch.request_log()
                         objPeakSearch.display_log ()
