@@ -349,7 +349,6 @@ class PeakSearchMenu:
                     uploaded_map = self.load_files ()
     
                     res = self.exec_peaksearch (uploaded_map)
-                    #log = self.request_log ()
                 
                     result = self.get_result (res)
 
@@ -363,10 +362,8 @@ class PeakSearchMenu:
                         st.session_state['menu_peaksearch'] = True
                         st.session_state['menu_indexing'] = False
                         st.session_state['peakDf_indexing'] = None
-                        #st.session_state['menu_upload'] = False
-                        #print ('peaksearch complete!!!')
-                        #print (st.session_state['menu_peaksearch'],
-                        #       st.session_state['menu_indexing'])
+                        st.session_state['candidate_exist'] = False
+
         return ans
 
 if __name__ == '__main__':

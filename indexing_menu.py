@@ -548,17 +548,18 @@ class IndexingMenu:
                 result = self.get_result (res)
                 if isinstance (result, str):
                     st.write (res)
-                else:
+
+                elif result is not None:
                     if result:
                         self.take_indexing_peak_data_selected (
                                                     uploaded_map)
                         st.session_state['menu_indexing'] = True
-                        #st.session_state['candidate_exist'] = True                    
-                        #st.session_state['menu_peaksearch'] = False    
+                        st.session_state['menu_peaksearch'] = False
+
                     else:
                         st.session_state['peakDf_indexing'] = None
-                        #st.session_state['menu_indexing'] = True
-                    #    st.session_state['candidate_exist'] = False
+                        st.session_state['menu_indexing'] = True
+                        st.session_state['menu_peaksearch'] = False
 
     def disp_bestM (self,):
         lang = st.session_state['lang']
@@ -655,7 +656,7 @@ class IndexingMenu:
                                     key = cs)
                 self.manage_list_candidates (sel, sel_dict)
         
-        if len (st.session_state['list_candidates']) > 1:
+        if (st.session_state['list_candidates'] is not None) and (len (st.session_state['list_candidates']) > 1):
             selected_num = st.session_state['list_candidates'][-1]
             if selected_num != numSelectedCandidate:
                 uploaded_map = self.load_files ()

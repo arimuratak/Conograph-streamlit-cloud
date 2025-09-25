@@ -40,29 +40,6 @@ class MainMenu:
         else: lang = 'jpn'
         st.session_state['lang'] = lang
     
-    def select_result_display_menu (self,):
-        lang = st.session_state['lang']
-        mess_sel = mess[lang]['graph']
-        mes_pks = mess_sel['pks_result']
-        mes_bestM = mess_sel['bestM']
-        mes_lat = mess_sel['latticeConst']
-        
-        if st.session_state['menu_indexing']:
-            menuList = [mes_pks, mes_bestM, mes_lat]
-        elif st.session_state['menu_peaksearch']:
-            menuList = [mes_pks]
-        else : menuList = None
-
-        if menuList is not None:
-            sel = st.radio (
-                {'eng' : '＜＜Select display menu＞＞',
-                'jpn' : '＜＜結果表示の選択＞＞'}[lang],
-                menuList, horizontal = True)
-    
-            return sel
-        
-        else: return None
-
     def tabs_result_display (self,):
         mess_sel = mess[lang]['graph']
         mes_pks = mess_sel['pks_result']
@@ -71,43 +48,12 @@ class MainMenu:
         
         if st.session_state['menu_indexing']:
             menuList = [mes_pks, mes_bestM, mes_lat]
-        elif st.session_state['menu_peaksearch']:
+        elif st.session_state['menu_peaksearch'] | st.session_state['menu_indexing']:
             menuList = [mes_pks]
         else : menuList = None
         
         return menuList
 
-    def select_graph_display_menu (self,):
-        lang = st.session_state['lang']
-        sel_gr_peak = {'eng' : 'Histogram',
-                   'jpn' : 'ヒストグラム'}[lang]
-        sel_log_1 = {'eng' : 'Log (peak search)',
-                   'jpn' : 'ログ (ピークサーチ)'}[lang]
-        sel_log_2 = {'eng' : 'Log (indexing)',
-                   'jpn' : 'ログ (指標付け)'}[lang]
-
-        print ('menu select graph display!!!',
-               st.session_state['menu_peaksearch'],
-               st.session_state['menu_indexing'])
-
-        if st.session_state['menu_indexing']:
-            menuList = [sel_gr_peak, sel_log_1, sel_log_2]
-        elif st.session_state['menu_peaksearch']:
-            menuList = [sel_gr_peak, sel_log_1]
-        elif st.session_state['menu_upload']:
-            menuList = [sel_gr_peak]
-        else:
-            menuList = None
-
-        if menuList is not None:
-            sel = st.radio (
-                {'eng' : '＜＜Display Select Graph or Log＞＞',
-                'jpn' : '＜＜グラフ・ログ表示の選択＞＞'}[lang],
-                menuList, horizontal = True)
-    
-            return sel, [sel_gr_peak, sel_log_1, sel_log_2]
-        
-        else: return None, None
     
     def tabs_graph_log_display (self,):
         lang = st.session_state['lang']
@@ -117,8 +63,8 @@ class MainMenu:
                    'jpn' : 'ログ (ピークサーチ)'}[lang]
         sel_log_2 = {'eng' : 'Log (indexing)',
                    'jpn' : 'ログ (指標付け)'}[lang]
-        
-        if st.session_state['menu_indexing']:
+
+        if st.session_state['menu_indexing'] & (not st.session_state['menu_peaksearch']):
             menuList = [sel_gr_peak, sel_log_1, sel_log_2]
         elif st.session_state['menu_peaksearch']:
             menuList = [sel_gr_peak, sel_log_1]
@@ -307,7 +253,7 @@ if __name__ == '__main__':
         if st.session_state['menu_upload']:
             with tab_pks: out_pk_menu = objPeakSearch.menu()
 
-        if st.session_state['menu_peaksearch']:
+        if st.session_state['menu_peaksearch'] | st.session_state['menu_indexing']:
             with tab_idx: objIndexing.menu()
 
     #----------------------------------------------------
@@ -337,11 +283,10 @@ if __name__ == '__main__':
                                 st.session_state['peakDf_selected'] = selected
                                 objPeakSearch.feedbackSelectedPeakToFile (selected)
                         elif menu == mes['bestM']:
-                            if st.session_state['candidate_exist']:
-                                objIndexing.disp_bestM ()
+                            objIndexing.disp_bestM ()
                         elif menu == mes['latticeConst']:
+                            objIndexing.menu_select_candidate ()
                             if st.session_state['candidate_exist']:
-                                objIndexing.menu_select_candidate ()
                                 objIndexing.operation_summary ()
 
         with graph_log_area:
