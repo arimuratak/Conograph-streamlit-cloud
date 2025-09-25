@@ -469,33 +469,47 @@ class IndexingMenu:
         
         result = {'eng' : eng, 'jpn' : jpn}
 
-        st.session_state['result'] = result
- 
-    def get_result (self, res):
-        if res is None: ans = None
+        st.session_state['result'] = result 
+    
+    def get_result(self, res):
+        ans = None  # ← これで常に定義済みにしておく
 
-        else:
-            if res.status_code == 200:
-                if os.path.exists (self.result_path):
-                    os.remove (self.result_path)
-                with open (self.result_path, 'wb') as f:
-                    f.write (res.content)
-                df_bestM, txt_bestM, dict_bestM,\
-                    candi_exists = read_for_bestM (self.result_path)
-                latConst = text2lattice (dict_bestM)
-                selected_lattice, lattice_candidates =\
-                      read_lattices_from_xml (self.result_path)
+        if res is None:
+            return ans  # None を返す
 
-                self.put_result_jpn_eng (
+        try:
+            status = getattr(res, "status_code", None)
+
+            if status == 200:
+                # 既存ファイルを安全に差し替え
+                if os.path.exists(self.result_path):
+                    os.remove(self.result_path)
+                with open(self.result_path, "wb") as f:
+                    f.write(res.content or b"")
+
+                df_bestM, txt_bestM, dict_bestM, candi_exists = read_for_bestM(self.result_path)
+                latConst = text2lattice(dict_bestM)
+                selected_lattice, lattice_candidates = read_lattices_from_xml(self.result_path)
+
+                self.put_result_jpn_eng(
                     df_bestM, txt_bestM, dict_bestM, latConst,
                     selected_lattice, lattice_candidates)
                 st.session_state['candidate_exist'] = candi_exists
                 ans = candi_exists
-            
-            elif res.status_code == 500:
-                ans = 'Error 500'
-                
+
+            elif status == 500:
+                ans = "Error 500"
+
+            else:
+                # 他のHTTPコード（404や502など）の場合のフォールバック
+                ans = f"HTTP {status}"
+
+        except Exception as e:
+            # 解析処理やファイル書き込みで例外が出た場合も返せるようにする
+            ans = f"Exception: {type(e).__name__}: {e}"
+
         return ans
+
 
     # パラメータ設定メニュー
     def param_menu (self,):
