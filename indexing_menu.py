@@ -106,7 +106,7 @@ class IndexingMenu:
     
     def exec_indexing (self, uploaded_map):
         lang = st.session_state['lang']
-        if st.button ({'eng' : 'Indexing Exec',
+        if st.button ({'eng' : 'Indexing Run',
                        'jpn':'Indexing実行'}[lang]):
             res = self.exec_cmd (uploaded_map, 'quit\n')
             st.session_state['list_candidates'] = None
@@ -238,9 +238,12 @@ class IndexingMenu:
                 ps = convParams.strip().split (' ')
             else: ps = [' ',' ',' ']
             
-            with col1: p1 = st.text_input ('', ps[0], key = 'conv1')
-            with col2: p2 = st.text_input ('', ps[1], key = 'conv2')
-            with col3: p3 = st.text_input ('', ps[2], key = 'conv3')
+            with col1: p1 = st.text_input (
+                'v1', ps[0], key = 'conv1', label_visibility = 'collapsed')
+            with col2: p2 = st.text_input (
+                'v2', ps[1], key = 'conv2', label_visibility = 'collapsed')
+            with col3: p3 = st.text_input (
+                'v3', ps[2], key = 'conv3', label_visibility = 'collapsed')
 
             ans = ' '.join ([p1, p2, p3])
 

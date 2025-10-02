@@ -52,7 +52,7 @@ class PeakSearchMenu:
 
     def exec_peaksearch (self, uploaded_map):
         lang = st.session_state['lang']
-        if st.button ({'eng' : 'Peaksearch Exec',
+        if st.button ({'eng' : 'Peaksearch Run',
                        'jpn':'ピークサーチ実行'}[lang]):
             files = {}
             for fname, fobj in uploaded_map.items():
