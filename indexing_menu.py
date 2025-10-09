@@ -9,8 +9,8 @@ from dataIO import read_for_bestM, text2lattice, read_peak_indexing,\
 
 class IndexingMenu:
     def __init__(self,):
-        #self.api_url = 'http://localhost:8100'
-        self.api_url = 'https://conograph-api-indexing.onrender.com'
+        self.api_url = 'http://localhost:8100'
+        #self.api_url = 'https://conograph-api-indexing.onrender.com'
         #self.api_url = 'https://conograph-api-indexing-1.onrender.com' # Singapore
         os.makedirs ('input', exist_ok = True)
         os.makedirs ('result', exist_ok = True)
@@ -146,7 +146,7 @@ class IndexingMenu:
         if cmd is None: cmd = 'quit\n'
         elif 'quit' not in cmd[-5:]: cmd += 'quit\n'
         data = {'cmd' : cmd}
-        print (cmd)
+        #print (cmd)
         files = {}
         for fname, fobj in uploaded_map.items():
                 files[fname] = (fname, fobj,
@@ -756,25 +756,10 @@ class IndexingMenu:
             )
 
     def manage_list_candidates (self, sel, sel_dict):
-        # sel_dict : 格子パターン毎の候補番号&格子定数
-        # nums : 格子パターンに含まれてる格子番号list
-        #nums = list (sel_dict.values())
-
-        #list_candidates = st.session_state['list_candidates']
-        #list_candidatesには、他の格子パターンの候補番号が格納されている
-        #selected_num = list_candidates.pop (0) #selectedLatticeCandidateの候補番号
-
-        # 
-        #list_candidates = [n for n in list_candidates if n not in nums]
-        
         if sel != '-----':
             sel = sel_dict[sel]
             if sel not in st.session_state['list_candidates']:
                 st.session_state['list_candidates'].append (sel)            
-
-        #list_candidates = [selected_num] + list_candidates
-
-        #st.session_state['list_candidates'] = list_candidates
 
     def display_log (self,):
         with open (self.log_path, 'r', encoding = 'utf-8') as f:

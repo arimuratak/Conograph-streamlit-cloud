@@ -2,6 +2,21 @@
 
 <ZCodeParameters>
   <ConographParameters>
+    <!-- Parameters for the hisitogram.-->
+    <!-- 0:tof, 1:angle dispersion-->
+    <IsAngleDispersion> 0 </IsAngleDispersion>
+    
+    <!-- Conversion parameters for tof : a polynomial of any degree -->
+    <ConversionParameters> 9.03976 9965.02 5.88424    </ConversionParameters>
+    
+    <!-- Peak shift parameters for angle dispersion : Z(deg.), Ds(deg.), Ts(deg.).
+         2*d*sin(theta0) = Wlength, 2*theta = 2*theta0 + Z + Ds*cos(theta0) + Ts*sin(2*theta0). -->
+    <ZeroPointShiftParameter> 0.0 </ZeroPointShiftParameter>
+    
+    <!-- Wave length(angstrom) for angle dispersion. -->
+    <WaveLength> 1.54056 </WaveLength>
+    
+    <!-- Parameters for search.-->
     <SearchLevel>
     <!-- 0:quick search (suitable for lattices with higher symmetries.),
          1:regular search (suitable for lattices with lower symmetries.).-->
@@ -9,68 +24,22 @@
     </SearchLevel>
     
     <!-- Number of reflections for calculation.-->
-    <MaxNumberOfPeaks> AUTO </MaxNumberOfPeaks>
-    
-    <!-- 0:tof, 1:angle dispersion-->
-    <IsAngleDispersion> 0 </IsAngleDispersion>
-    
-    <!-- Conversion parameters for tof : a polynomial of any degree -->
-    <ConversionParameters> 9.03976 9965.02 5.88424    </ConversionParameters>
-    
-    <!-- Wave length(angstrom) for angle dispersion. -->
-    <WaveLength> 1.54056 </WaveLength>
-    
-    <!-- Peak shift parameters for angle dispersion : Z(deg.), Ds(deg.), Ts(deg.).
-         2*d*sin(theta0) = Wlength, 2*theta = 2*theta0 + Z + Ds*cos(theta0) + Ts*sin(2*theta0). -->
-    <ZeroPointShiftParameter> 0.0 </ZeroPointShiftParameter>
-    
-    <!-- Number of reflections to calculate figure of Merit.
-         Input a number >=20 even if reflections in a diffraction pattern is less than 20.-->
-    <MaxNumberOfPeaksForFOM> 20 </MaxNumberOfPeaksForFOM>
-    
-    <!-- Number of hkl among input reflections.-->
-    <MinNumberOfMillerIndicesInRange> AUTO </MinNumberOfMillerIndicesInRange>
-    <MaxNumberOfMillerIndicesInRange> AUTO </MaxNumberOfMillerIndicesInRange>
-    
-    <!-- Output the candidates with better FOM than the following value.-->
-    <MinFOM> 3.0 </MinFOM>
-    
-    <!-- Minimum and maximum of the unit cell edges a, b, c (angstrom).-->
-    <MinUnitCellEdgeABC> 0.0 </MinUnitCellEdgeABC>
-    <MaxUnitCellEdgeABC> 1000.0 </MaxUnitCellEdgeABC>
-    
-    <!-- Relative resolution to judge if two lattices are equivalent or not.
-         If the relative difference of two lattice parameters are within this value, 
-         only the one with better figure of merit is output.-->
-    <Resolution> 0.03 </Resolution>
-    
-    <!-- Minimum of the volume of primitive unit-cell (>=0) -->
-    <MinPrimitiveUnitCellVolume>	AUTO </MinPrimitiveUnitCellVolume>
-    
-    <!-- Maximum of the volume of primitive unit-cell (>0) -->
-    <MaxPrimitiveUnitCellVolume>	AUTO </MaxPrimitiveUnitCellVolume>
-    
-    <!-- Maximum number of quadruples (q1,q2,q3,q4) taken from selected topographs.-->
-    <MaxNumberOfTwoDimTopographs> AUTO </MaxNumberOfTwoDimTopographs>
-    
-    <!-- Maximum number of seeds of 3-dimensional topographs -->
-    <MaxNumberOfLatticeCandidates> AUTO </MaxNumberOfLatticeCandidates>
+    <MaxNumberOfPeaks> AUTO (20) </MaxNumberOfPeaks>
     
     <!-- The critical value c to judge if a linear sum of Q eqauls zero. ( abs(\sigma_i Q_i) <= c * Err<\sigma_i Q_i> ) -->
     <CriticalValueForLinearSum>	1.0 </CriticalValueForLinearSum>
     
-    <ThresholdOnNormM> <!-- Solutions having M^{Wu} less than this value are removed before Bravais lattice determination -->
-      1.9
-    </ThresholdOnNormM>
-    <ThresholdOnRevM> <!-- Solutions having M^{Rev} less than this value are removed before Bravais lattice determination -->
-      1.0
-    </ThresholdOnRevM>
-    <MinDistanceBetweenLatticePoints>
-      2.0
-    </MinDistanceBetweenLatticePoints>
-    <MaxNumberOfSolutionsForEachBravaisLattice>
-      1000
-    </MaxNumberOfSolutionsForEachBravaisLattice>
+    <!-- Minimum of the volume of primitive unit-cell (>=0) -->
+    <MinPrimitiveUnitCellVolume>	AUTO (5) </MinPrimitiveUnitCellVolume>
+    
+    <!-- Maximum of the volume of primitive unit-cell (>0) -->
+    <MaxPrimitiveUnitCellVolume>	AUTO (61.521) </MaxPrimitiveUnitCellVolume>
+    
+    <!-- Maximum number of quadruples (q1,q2,q3,q4) taken from selected topographs.-->
+    <MaxNumberOfTwoDimTopographs> AUTO (140) </MaxNumberOfTwoDimTopographs>
+    
+    <!-- Maximum number of seeds of 3-dimensional topographs -->
+    <MaxNumberOfLatticeCandidates> AUTO (19600) </MaxNumberOfLatticeCandidates>
     
     <!--Output for each crystal system? (0:No, 1:Yes)-->
     <OutputTriclinic>     1 </OutputTriclinic>
@@ -88,9 +57,32 @@
     <OutputCubicI>        1 </OutputCubicI>
     <OutputCubicF>        1 </OutputCubicF>
 
+    <!-- Parameters for output.-->
+    <!-- Relative resolution to judge if two lattices are equivalent or not.
+         If the relative difference of two lattice parameters are within this value, 
+         only the one with better figure of merit is output.-->
+    <Resolution> 0.03 </Resolution>
+    
+    <!-- Number of reflections to calculate figure of Merit.
+         Input a number >=20 even if reflections in a diffraction pattern is less than 20.-->
+    <MaxNumberOfPeaksForFOM> 20 </MaxNumberOfPeaksForFOM>
+    
+    <!-- Output the candidates with better FOM than the following value.-->
+    <MinFOM> 3.0 </MinFOM>
+    
+    <!-- Number of hkl among input reflections.-->
+    <MaxNumberOfMillerIndicesInRange> AUTO (128) </MaxNumberOfMillerIndicesInRange>
+    <MinNumberOfMillerIndicesInRange> AUTO (12) </MinNumberOfMillerIndicesInRange>
+    
+    <!-- Minimum and maximum of the unit cell edges a, b, c (angstrom).-->
+    <MaxUnitCellEdgeABC> 1000.0 </MaxUnitCellEdgeABC>
+    <MinUnitCellEdgeABC> 0.0 </MinUnitCellEdgeABC>
+    
     <!-- Configuration parameters.-->
     <NumberOfThreadsToUse>
-      19
+      <!-- MAX: all the processers are used.
+           DEFAULT: all but one processers are used. -->
+      DEFAULT
     </NumberOfThreadsToUse>
     <AxisForRhombohedralSymmetry> <!-- "Rhombohedral" or "Hexagonal" -->
       Hexagonal
@@ -98,6 +90,15 @@
     <AxisForMonoclinicSymmetry> <!-- "A", "B", or "C" -->
       B
     </AxisForMonoclinicSymmetry>
+    <ThresholdOnNormM> <!-- Solutions having M^{Wu} less than this value are removed before Bravais lattice determination -->
+      1.9
+    </ThresholdOnNormM>
+    <ThresholdOnRevM> <!-- Solutions having M^{Rev} less than this value are removed before Bravais lattice determination -->
+      0.9
+    </ThresholdOnRevM>
+    <MinDistanceBetweenLatticePoints>
+      2.0
+    </MinDistanceBetweenLatticePoints>
   </ConographParameters>
   
   <PeakSearchPSParameters>
