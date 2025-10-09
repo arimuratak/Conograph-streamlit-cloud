@@ -9,9 +9,8 @@ from dataIO import read_for_bestM, text2lattice, read_peak_indexing,\
 
 class IndexingMenu:
     def __init__(self,):
-        self.api_url = 'http://localhost:8100'
-        #self.api_url = 'https://conograph-api-indexing.onrender.com'
-        #self.api_url = 'https://conograph-api-indexing-1.onrender.com' # Singapore
+        #self.api_url = 'http://localhost:8100'
+        self.api_url = 'https://conograph-api-indexing.onrender.com'
         os.makedirs ('input', exist_ok = True)
         os.makedirs ('result', exist_ok = True)
 
