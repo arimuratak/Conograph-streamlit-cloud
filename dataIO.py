@@ -577,14 +577,17 @@ def correct_parameter_datas (folder = 'sample_', savePath = 'all_parameters.csv'
     params.to_csv (savePath)
 
 if __name__ == '__main__':
+    selected_lattice, lattice_candidates = read_lattices_from_xml('result/result.xml')
+    print (lattice_candidates[['number', 'CrystalSystem', 'OptimizedParameters']].head())
+    print (lattice_candidates.columns)
     #ans1, ans2 = read_lattices_from_xml ('result/result.xml')
     #print (ans1)
     #print (ans2)
-    df, texts, ans, flg = read_for_bestM ('result/result.xml')
-    print (df)
-    print (texts)
-    print (ans)
-    print (flg)
+    #df, texts, ans, flg = read_for_bestM ('result/result.xml')
+    ##print (df)
+    #print (texts)
+    #print (ans)
+    #print (flg)
     ##ans = text2lattice (ans)
     #print (ans)
     #correct_parameter_datas (

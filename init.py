@@ -63,5 +63,7 @@ def setup_session_state ():
         st.session_state['uploaded_hist'] = None
     if 'candidate_exist' not in st.session_state:
         st.session_state['candidate_exist'] = None
+    if 'candidate2param' not in st.session_state:
+        st.session_state['candidate2param'] = None
     
 #setup_session_state ()
